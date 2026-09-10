@@ -1,0 +1,4 @@
+
+# === Setup scripts (one-time helpers) ===
+setup-*.sh
+add-adr-*.sh
