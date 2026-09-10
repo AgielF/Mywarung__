@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'infrastructure/database/app_database.dart';
+import 'infrastructure/repositories/drift_product_repository.dart';
+import 'domain/inventory/repositories/product_repository.dart';
 import 'ui/home/home_screen.dart';
 
 void main() {
-  runApp(const POSWarungAIApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  final db = AppDatabase();
+  final productRepository = DriftProductRepository(db);
+
+  runApp(POSWarungAIApp(productRepository: productRepository));
 }
 
 class POSWarungAIApp extends StatelessWidget {
-  const POSWarungAIApp({super.key});
+  final ProductRepository productRepository;
+
+  const POSWarungAIApp({super.key, required this.productRepository});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +26,7 @@ class POSWarungAIApp extends StatelessWidget {
         useMaterial3: true,
         colorSchemeSeed: Colors.green,
       ),
-      home: const HomeScreen(),
+      home: HomeScreen(productRepository: productRepository),
       debugShowCheckedModeBanner: false,
     );
   }
