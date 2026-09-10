@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import '../../domain/inventory/repositories/product_repository.dart';
+import '../../domain/sales/repositories/transaction_repository.dart';
 import '../inventory/inventory_list_screen.dart';
+import '../sales/sales_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ProductRepository productRepository;
+  final TransactionRepository transactionRepository;
 
-  const HomeScreen({super.key, required this.productRepository});
+  const HomeScreen({
+    super.key,
+    required this.productRepository,
+    required this.transactionRepository,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +61,19 @@ class HomeScreen extends StatelessWidget {
                   label: const Text('Produk'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: null,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SalesScreen(
+                          productRepository: productRepository,
+                          transactionRepository: transactionRepository,
+                        ),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.receipt_long),
-                  label: const Text('Transaksi\n(Segera hadir)', textAlign: TextAlign.center),
+                  label: const Text('Transaksi'),
                 ),
                 ElevatedButton.icon(
                   onPressed: null,
