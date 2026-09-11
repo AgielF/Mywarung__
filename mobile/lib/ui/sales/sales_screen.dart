@@ -4,16 +4,24 @@ import '../../domain/inventory/entities/product.dart';
 import '../../domain/inventory/repositories/product_repository.dart';
 import '../../domain/sales/entities/transaction.dart';
 import '../../domain/sales/repositories/transaction_repository.dart';
+import '../../domain/customer/entities/customer.dart';
+import '../../domain/customer/repositories/customer_repository.dart';
+import '../../domain/customer/repositories/debt_repository.dart';
+import '../customer/customer_form_screen.dart';
 import 'sales_state.dart';
 
 class SalesScreen extends StatefulWidget {
   final ProductRepository productRepository;
   final TransactionRepository transactionRepository;
+  final CustomerRepository customerRepository;
+  final DebtRepository debtRepository;
 
   const SalesScreen({
     super.key,
     required this.productRepository,
     required this.transactionRepository,
+    required this.customerRepository,
+    required this.debtRepository,
   });
 
   @override
@@ -121,6 +129,12 @@ class _SalesScreenState extends State<SalesScreen> {
 
     if (method == null) return;
 
+    int? selectedCustomerId;
+    if (method == PaymentMethod.debt) {
+      selectedCustomerId = await _pickCustomer();
+      if (selectedCustomerId == null) return; // cancelled
+    }
+
     setState(() {
       _state = _state.copyWith(isLoading: true);
     });
@@ -131,15 +145,34 @@ class _SalesScreenState extends State<SalesScreen> {
         items: _state.cart,
         total: _state.totalAmount,
         paymentMethod: method,
+        customerId: selectedCustomerId,
         createdAt: DateTime.now(),
       );
 
       await widget.transactionRepository.create(transaction);
 
+      bool debtSuccess = true;
+      if (method == PaymentMethod.debt && selectedCustomerId != null) {
+        try {
+          await widget.debtRepository.createDebt(
+            customerId: selectedCustomerId,
+            amount: transaction.totalAmount,
+          );
+        } catch (e) {
+          debtSuccess = false;
+        }
+      }
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaksi Berhasil!')),
-        );
+        if (!debtSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaksi tersimpan, tapi kasbon gagal dicatat. Cek manual.')),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Transaksi Berhasil!')),
+          );
+        }
         setState(() {
           _state = _state.clearCart().copyWith(isLoading: false);
         });
@@ -154,6 +187,73 @@ class _SalesScreenState extends State<SalesScreen> {
         });
       }
     }
+  }
+
+  Future<int?> _pickCustomer() async {
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Pilih Customer'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: StreamBuilder<List<Customer>>(
+              stream: widget.customerRepository.watchAll(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                
+                final customers = snapshot.data ?? [];
+                
+                if (customers.isEmpty) {
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Belum ada customer'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, null);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CustomerFormScreen(
+                                customerRepository: widget.customerRepository,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text('Tambah Customer'),
+                      ),
+                    ],
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: customers.length,
+                  itemBuilder: (context, index) {
+                    final customer = customers[index];
+                    return ListTile(
+                      title: Text(customer.name),
+                      subtitle: Text(customer.phone ?? '-'),
+                      onTap: () => Navigator.pop(context, customer.id),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: const Text('Batal'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showCartSheet() {

@@ -5,6 +5,10 @@ import 'package:pos_warung_ai/domain/inventory/entities/product.dart';
 import 'package:pos_warung_ai/domain/inventory/repositories/product_repository.dart';
 import 'package:pos_warung_ai/domain/sales/entities/transaction.dart' as domain;
 import 'package:pos_warung_ai/domain/sales/repositories/transaction_repository.dart';
+import 'package:pos_warung_ai/domain/customer/entities/customer.dart';
+import 'package:pos_warung_ai/domain/customer/entities/debt.dart';
+import 'package:pos_warung_ai/domain/customer/repositories/customer_repository.dart';
+import 'package:pos_warung_ai/domain/customer/repositories/debt_repository.dart';
 import 'package:pos_warung_ai/ui/sales/sales_screen.dart';
 
 class FakeProductRepository implements ProductRepository {
@@ -34,13 +38,47 @@ class FakeTransactionRepository implements TransactionRepository {
   @override Stream<List<domain.Transaction>> watchAll({DateTime? from, DateTime? to}) async* { yield []; }
 }
 
+class FakeCustomerRepository implements CustomerRepository {
+  final List<Customer> _customers = [
+    Customer(id: 1, tenantId: 'tenant-1', name: 'Budi Kasbon', createdAt: DateTime.now())
+  ];
+  @override Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* { yield _customers; }
+  @override Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
+  @override Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
+  @override Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
+  @override Future<void> update(Customer customer, {String tenantId = 'tenant-1'}) async {}
+  @override Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
+}
+
+class FakeDebtRepository implements DebtRepository {
+  bool createDebtCalled = false;
+  double? createdAmount;
+  int? createdCustomerId;
+
+  @override Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
+  @override Stream<List<Debt>> watchByCustomer(int customerId, {String tenantId = 'tenant-1'}) async* {}
+  @override Future<List<Debt>> getUnpaidByCustomer(int customerId, {String tenantId = 'tenant-1'}) async => [];
+  @override Future<int> createDebt({required int customerId, required double amount, String tenantId = 'tenant-1'}) async {
+    createDebtCalled = true;
+    createdAmount = amount;
+    createdCustomerId = customerId;
+    return 1;
+  }
+  @override Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {}
+  @override Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
+}
+
 void main() {
   late FakeProductRepository productRepo;
   late FakeTransactionRepository transactionRepo;
+  late FakeCustomerRepository customerRepo;
+  late FakeDebtRepository debtRepo;
 
   setUp(() {
     productRepo = FakeProductRepository();
     transactionRepo = FakeTransactionRepository();
+    customerRepo = FakeCustomerRepository();
+    debtRepo = FakeDebtRepository();
   });
 
   Widget createWidget() {
@@ -48,6 +86,8 @@ void main() {
       home: SalesScreen(
         productRepository: productRepo,
         transactionRepository: transactionRepo,
+        customerRepository: customerRepo,
+        debtRepository: debtRepo,
       ),
     );
   }
@@ -75,6 +115,50 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rp 3000.0 x 1 = Rp 3000.0'), findsOneWidget);
+    
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('pilih Kasbon -> dialog pilih customer tampil', (tester) async {
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+    await tester.tap(find.text('Indomie'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.shopping_cart));
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Bayar').last);
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Kasbon'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pilih Customer'), findsOneWidget);
+    expect(find.text('Budi Kasbon'), findsOneWidget);
+    
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('pilih Kasbon + pilih customer -> debtRepository.createDebt dipanggil', (tester) async {
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+    await tester.tap(find.text('Indomie'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.shopping_cart));
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Bayar').last);
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Kasbon'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Budi Kasbon'));
+    await tester.pumpAndSettle();
+
+    expect(debtRepo.createDebtCalled, isTrue);
+    expect(debtRepo.createdAmount, 3000.0);
+    expect(debtRepo.createdCustomerId, 1);
     
     await tester.pumpWidget(Container());
   });

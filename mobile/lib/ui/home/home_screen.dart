@@ -75,6 +75,8 @@ class HomeScreen extends StatelessWidget {
                         builder: (context) => SalesScreen(
                           productRepository: productRepository,
                           transactionRepository: transactionRepository,
+                          customerRepository: customerRepository,
+                          debtRepository: debtRepository,
                         ),
                       ),
                     );
