@@ -6,12 +6,15 @@ import '../../domain/customer/repositories/debt_repository.dart';
 import '../inventory/inventory_list_screen.dart';
 import '../sales/sales_screen.dart';
 import '../customer/customer_list_screen.dart';
+import '../reporting/reporting_screen.dart';
+import '../../domain/reporting/repositories/reporting_repository.dart';
 
 class HomeScreen extends StatelessWidget {
   final ProductRepository productRepository;
   final TransactionRepository transactionRepository;
   final CustomerRepository customerRepository;
   final DebtRepository debtRepository;
+  final ReportingRepository reportingRepository;
 
   const HomeScreen({
     super.key,
@@ -19,6 +22,7 @@ class HomeScreen extends StatelessWidget {
     required this.transactionRepository,
     required this.customerRepository,
     required this.debtRepository,
+    required this.reportingRepository,
   });
 
   @override
@@ -100,9 +104,19 @@ class HomeScreen extends StatelessWidget {
                   label: const Text('Customer'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: null,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ReportingScreen(
+                          reportingRepository: reportingRepository,
+                          transactionRepository: transactionRepository,
+                        ),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.bar_chart),
-                  label: const Text('Laporan\n(Segera hadir)', textAlign: TextAlign.center),
+                  label: const Text('Laporan', textAlign: TextAlign.center),
                 ),
               ],
             ),

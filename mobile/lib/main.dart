@@ -8,6 +8,8 @@ import 'domain/inventory/repositories/product_repository.dart';
 import 'domain/sales/repositories/transaction_repository.dart';
 import 'domain/customer/repositories/customer_repository.dart';
 import 'domain/customer/repositories/debt_repository.dart';
+import 'domain/reporting/repositories/reporting_repository.dart';
+import 'infrastructure/repositories/drift_reporting_repository.dart';
 import 'ui/home/home_screen.dart';
 
 void main() {
@@ -18,12 +20,14 @@ void main() {
   final transactionRepository = DriftTransactionRepository(db);
   final customerRepository = DriftCustomerRepository(db);
   final debtRepository = DriftDebtRepository(db);
+  final reportingRepository = DriftReportingRepository(db);
 
   runApp(POSWarungAIApp(
     productRepository: productRepository,
     transactionRepository: transactionRepository,
     customerRepository: customerRepository,
     debtRepository: debtRepository,
+    reportingRepository: reportingRepository,
   ));
 }
 
@@ -32,6 +36,7 @@ class POSWarungAIApp extends StatelessWidget {
   final TransactionRepository transactionRepository;
   final CustomerRepository customerRepository;
   final DebtRepository debtRepository;
+  final ReportingRepository reportingRepository;
 
   const POSWarungAIApp({
     super.key,
@@ -39,6 +44,7 @@ class POSWarungAIApp extends StatelessWidget {
     required this.transactionRepository,
     required this.customerRepository,
     required this.debtRepository,
+    required this.reportingRepository,
   });
 
   @override
@@ -54,6 +60,7 @@ class POSWarungAIApp extends StatelessWidget {
         transactionRepository: transactionRepository,
         customerRepository: customerRepository,
         debtRepository: debtRepository,
+        reportingRepository: reportingRepository,
       ),
       debugShowCheckedModeBanner: false,
     );
