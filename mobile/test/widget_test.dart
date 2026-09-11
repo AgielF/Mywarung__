@@ -30,7 +30,7 @@ void main() {
     ));
 
     // Verify that the title text is present.
-    expect(find.text('POS Warung AI'), findsWidgets);
+    expect(find.text('MyWarung'), findsWidgets);
     expect(find.text('Offline-First POS untuk Warung Indonesia'), findsOneWidget);
 
     await database.close();

@@ -33,7 +33,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('POS Warung AI'),
+        title: const Text('MyWarung'),
       ),
       body: Center(
         child: Column(
@@ -46,7 +46,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'POS Warung AI',
+              'MyWarung',
               style: Theme.of(context).textTheme.headlineMedium,
             ),
             const SizedBox(height: 8),
