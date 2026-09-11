@@ -39,10 +39,17 @@ class FakeTransactionRepository implements TransactionRepository {
 }
 
 class FakeCustomerRepository implements CustomerRepository {
+  bool isEmpty = false;
   final List<Customer> _customers = [
     Customer(id: 1, tenantId: 'tenant-1', name: 'Budi Kasbon', createdAt: DateTime.now())
   ];
-  @override Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* { yield _customers; }
+  @override Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* { 
+    if (isEmpty) {
+      yield [];
+    } else {
+      yield _customers; 
+    }
+  }
   @override Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
   @override Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
   @override Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
@@ -159,6 +166,32 @@ void main() {
     expect(debtRepo.createDebtCalled, isTrue);
     expect(debtRepo.createdAmount, 3000.0);
     expect(debtRepo.createdCustomerId, 1);
+    
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('pilih Kasbon, dialog kosong, tap "Tambah Customer" -> CustomerFormScreen muncul', (tester) async {
+    customerRepo.isEmpty = true;
+    
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+    await tester.tap(find.text('Indomie'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.shopping_cart));
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Bayar').last);
+    await tester.pumpAndSettle();
+    
+    await tester.tap(find.text('Kasbon'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Belum ada customer'), findsOneWidget);
+    
+    await tester.tap(find.text('Tambah Customer'));
+    await tester.pumpAndSettle();
+    
+    expect(find.widgetWithText(AppBar, 'Tambah Customer'), findsOneWidget); // title of CustomerFormScreen
     
     await tester.pumpWidget(Container());
   });

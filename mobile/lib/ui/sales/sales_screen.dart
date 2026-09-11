@@ -132,6 +132,19 @@ class _SalesScreenState extends State<SalesScreen> {
     int? selectedCustomerId;
     if (method == PaymentMethod.debt) {
       selectedCustomerId = await _pickCustomer();
+      if (selectedCustomerId == -1) {
+        if (!mounted) return;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CustomerFormScreen(
+              customerRepository: widget.customerRepository,
+            ),
+          ),
+        );
+        selectedCustomerId = await _pickCustomer();
+        if (selectedCustomerId == -1) return; // treat as cancel if they cancel the second dialog
+      }
       if (selectedCustomerId == null) return; // cancelled
     }
 
@@ -190,67 +203,79 @@ class _SalesScreenState extends State<SalesScreen> {
   }
 
   Future<int?> _pickCustomer() async {
+    int streamKey = 0;
     return showDialog<int>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Pilih Customer'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: StreamBuilder<List<Customer>>(
-              stream: widget.customerRepository.watchAll(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                
-                final customers = snapshot.data ?? [];
-                
-                if (customers.isEmpty) {
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Belum ada customer'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context, null);
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CustomerFormScreen(
-                                customerRepository: widget.customerRepository,
-                              ),
-                            ),
-                          );
-                        },
-                        child: const Text('Tambah Customer'),
-                      ),
-                    ],
-                  );
-                }
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: const Text('Pilih Customer'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: StreamBuilder<List<Customer>>(
+                  key: ValueKey(streamKey),
+                  stream: widget.customerRepository.watchAll(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
 
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: customers.length,
-                  itemBuilder: (context, index) {
-                    final customer = customers[index];
-                    return ListTile(
-                      title: Text(customer.name),
-                      subtitle: Text(customer.phone ?? '-'),
-                      onTap: () => Navigator.pop(context, customer.id),
+                    if (snapshot.hasError) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Gagal memuat customer'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => setModalState(() => streamKey++),
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      );
+                    }
+                    
+                    final customers = snapshot.data ?? [];
+                    
+                    if (customers.isEmpty) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Belum ada customer'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context, -1);
+                            },
+                            child: const Text('Tambah Customer'),
+                          ),
+                        ],
+                      );
+                    }
+
+                    return ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: customers.length,
+                      itemBuilder: (context, index) {
+                        final customer = customers[index];
+                        return ListTile(
+                          title: Text(customer.name),
+                          subtitle: Text(customer.phone ?? '-'),
+                          onTap: () => Navigator.pop(context, customer.id),
+                        );
+                      },
                     );
                   },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, null),
-              child: const Text('Batal'),
-            ),
-          ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: const Text('Batal'),
+                ),
+              ],
+            );
+          }
         );
       },
     );
