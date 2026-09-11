@@ -49,20 +49,6 @@ class DriftTransactionRepository implements TransactionRepository {
         await _db.into(_db.transactionItems).insert(itemCompanion);
       }
 
-      if (transaction.paymentMethod == domain.PaymentMethod.debt) {
-        if (transaction.customerId == null) {
-          throw Exception('Customer wajib dipilih untuk pembayaran kasbon.');
-        }
-        await _db.into(_db.debts).insert(drift.DebtsCompanion.insert(
-          tenantId: transaction.tenantId,
-          customerId: transaction.customerId!,
-          amount: transaction.total,
-          paid: const Value(0),
-          status: 'unpaid',
-          createdAt: DateTime.now(),
-        ));
-      }
-
       return transactionId;
     });
   }
