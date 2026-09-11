@@ -5,17 +5,23 @@ import 'package:pos_warung_ai/main.dart';
 import 'package:pos_warung_ai/infrastructure/database/app_database.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_product_repository.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_transaction_repository.dart';
+import 'package:pos_warung_ai/infrastructure/repositories/drift_customer_repository.dart';
+import 'package:pos_warung_ai/infrastructure/repositories/drift_debt_repository.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     final database = AppDatabase.memory();
     final repository = DriftProductRepository(database);
     final txRepository = DriftTransactionRepository(database);
+    final customerRepo = DriftCustomerRepository(database);
+    final debtRepo = DriftDebtRepository(database);
 
     // Build our app and trigger a frame.
     await tester.pumpWidget(POSWarungAIApp(
       productRepository: repository,
       transactionRepository: txRepository,
+      customerRepository: customerRepo,
+      debtRepository: debtRepo,
     ));
 
     // Verify that the title text is present.

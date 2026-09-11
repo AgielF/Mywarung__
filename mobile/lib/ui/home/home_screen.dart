@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import '../../domain/inventory/repositories/product_repository.dart';
 import '../../domain/sales/repositories/transaction_repository.dart';
+import '../../domain/customer/repositories/customer_repository.dart';
+import '../../domain/customer/repositories/debt_repository.dart';
 import '../inventory/inventory_list_screen.dart';
 import '../sales/sales_screen.dart';
+import '../customer/customer_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final ProductRepository productRepository;
   final TransactionRepository transactionRepository;
+  final CustomerRepository customerRepository;
+  final DebtRepository debtRepository;
 
   const HomeScreen({
     super.key,
     required this.productRepository,
     required this.transactionRepository,
+    required this.customerRepository,
+    required this.debtRepository,
   });
 
   @override
@@ -76,9 +83,19 @@ class HomeScreen extends StatelessWidget {
                   label: const Text('Transaksi'),
                 ),
                 ElevatedButton.icon(
-                  onPressed: null,
-                  icon: const Icon(Icons.account_balance_wallet),
-                  label: const Text('Kasbon\n(Segera hadir)', textAlign: TextAlign.center),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CustomerListScreen(
+                          customerRepository: customerRepository,
+                          debtRepository: debtRepository,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.people),
+                  label: const Text('Customer'),
                 ),
                 ElevatedButton.icon(
                   onPressed: null,
