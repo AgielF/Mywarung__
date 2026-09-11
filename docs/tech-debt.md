@@ -25,3 +25,17 @@ phone validation.
 Kondisi: ReportingScreen pakai Stream.fromFuture untuk filter range,
 jadi list transaksi tidak auto-update saat ada transaksi baru.
 Fix rencana Task 9: tambah watchRangeReport di repository atau polling.
+## Task 8b-1 — SalesBarChart overflow untuk days > 7
+Kondisi: SalesBarChart pakai Row tanpa scroll horizontal. Kalau days dinaikkan
+(> 7), bar akan overflow.
+Fix rencana Task 9: bungkus Row dengan SingleChildScrollView horizontal, atau
+pakai Flexible per bar.
+
+## Task 8b-1 — Error state "Gagal memuat tren" tanpa tombol retry
+Kondisi: Berbeda dengan error state utama ReportingScreen yang punya tombol
+"Coba Lagi".
+Fix rencana Task 9: tambah tombol retry dengan pola _trendKey + ValueKey.
+
+## Task 8b-1 — getSalesTrend = 7× getDailyReport (21 query untuk 7 hari)
+Kondisi: Loop per hari memanggil getDailyReport terpisah.
+Fix rencana Fase 2: single query group by date, agregat di SQL.
