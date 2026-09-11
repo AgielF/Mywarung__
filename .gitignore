@@ -18,3 +18,7 @@ mobile/android/app/profile/
 mobile/android/app/release/
 mobile/.idea/
 mobile/*.iml
+
+# CSV export (test artifacts)
+*.csv
+mobile/laporan_penjualan_*.csv
