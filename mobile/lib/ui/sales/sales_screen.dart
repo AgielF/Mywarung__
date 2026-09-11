@@ -89,6 +89,7 @@ class _SalesScreenState extends State<SalesScreen> {
 
   void _checkAndShowError() {
     if (_state.errorMessage != null) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(_state.errorMessage!)),
       );
@@ -177,6 +178,7 @@ class _SalesScreenState extends State<SalesScreen> {
       }
 
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         if (!debtSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Transaksi tersimpan, tapi kasbon gagal dicatat. Cek manual.')),
@@ -192,6 +194,7 @@ class _SalesScreenState extends State<SalesScreen> {
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error: $e')),
         );
@@ -409,33 +412,53 @@ class _SalesScreenState extends State<SalesScreen> {
       itemCount: _state.products.length,
       itemBuilder: (context, index) {
         final product = _state.products[index];
+        final qtyInCart = _state.cart.where((item) => item.productId == product.id).fold<int>(0, (sum, item) => sum + item.quantity);
         return Card(
-          child: InkWell(
-            onTap: () => _addToCart(product),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    child: Text(product.name.isNotEmpty ? product.name[0].toUpperCase() : '?'),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: InkWell(
+                  onTap: () => _addToCart(product),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 30,
+                          child: Text(product.name.isNotEmpty ? product.name[0].toUpperCase() : '?'),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          product.name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Rp ${product.price.toStringAsFixed(0)}'),
+                        const SizedBox(height: 4),
+                        Text('Stok: ${product.stock}', style: TextStyle(color: product.stock > 0 ? Colors.green : Colors.red)),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    product.name,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Rp ${product.price.toStringAsFixed(0)}'),
-                  const SizedBox(height: 4),
-                  Text('Stok: ${product.stock}', style: TextStyle(color: product.stock > 0 ? Colors.green : Colors.red)),
-                ],
+                ),
               ),
-            ),
+              if (qtyInCart > 0)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text('$qtyInCart', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+            ],
           ),
         );
       },

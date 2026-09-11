@@ -64,8 +64,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal menyimpan: ${e.toString()}')),
+        SnackBar(content: Text('Gagal menyimpan: $msg')),
       );
       setState(() {
         _isLoading = false;

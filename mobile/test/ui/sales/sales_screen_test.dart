@@ -195,4 +195,24 @@ void main() {
     
     await tester.pumpWidget(Container());
   });
+
+  testWidgets('SalesScreen shows cart qty badge on product card', (tester) async {
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+
+    // Tap produk 1x (masuk cart)
+    await tester.tap(find.text('Indomie'));
+    await tester.pump();
+
+    // Verifikasi badge qty muncul dengan text '1' di dalam Card produk
+    expect(find.descendant(of: find.byType(Card), matching: find.text('1')), findsOneWidget);
+
+    // Tap produk lagi -> quantity 2
+    await tester.tap(find.text('Indomie'));
+    await tester.pump();
+
+    expect(find.descendant(of: find.byType(Card), matching: find.text('2')), findsOneWidget);
+    
+    await tester.pumpWidget(Container());
+  });
 }

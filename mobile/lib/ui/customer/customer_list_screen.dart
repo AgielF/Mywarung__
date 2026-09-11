@@ -5,14 +5,18 @@ import 'customer_form_screen.dart';
 import 'debt_list_screen.dart';
 import '../../domain/customer/repositories/debt_repository.dart';
 
+import '../../domain/sales/repositories/transaction_repository.dart';
+
 class CustomerListScreen extends StatefulWidget {
   final CustomerRepository customerRepository;
   final DebtRepository debtRepository;
+  final TransactionRepository transactionRepository;
 
   const CustomerListScreen({
     super.key,
     required this.customerRepository,
     required this.debtRepository,
+    required this.transactionRepository,
   });
 
   @override
@@ -41,6 +45,8 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         builder: (context) => DebtListScreen(
           customer: customer,
           debtRepository: widget.debtRepository,
+          customerRepository: widget.customerRepository,
+          transactionRepository: widget.transactionRepository,
         ),
       ),
     );
@@ -70,13 +76,16 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       try {
         await widget.customerRepository.delete(customer.id!);
         if (!mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Customer berhasil dihapus')),
         );
       } catch (e) {
         if (!mounted) return;
+        final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: ${e.toString()}')),
+          SnackBar(content: Text('Gagal: $msg')),
         );
       }
     }

@@ -1,8 +1,19 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_warung_ai/domain/reporting/entities/sales_trend_point.dart';
 import 'package:pos_warung_ai/infrastructure/export/csv_exporter.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/path_provider'),
+      (MethodCall methodCall) async {
+        return '.';
+      },
+    );
+  });
   test('dailyReportToCsv dengan 3 SalesTrendPoint -> format baris benar', () {
     final trend = [
       SalesTrendPoint(date: DateTime(2023, 10, 1), totalSales: 15000, transactionCount: 3),
@@ -25,5 +36,11 @@ void main() {
     expect(CsvExporter.escapeField('Hello, World'), '"Hello, World"');
     expect(CsvExporter.escapeField('Hello "World"'), '"Hello ""World"""');
     expect(CsvExporter.escapeField('Hello\nWorld'), '"Hello\nWorld"');
+  });
+
+  test('CsvExporter.writeToFile returns path berakhiran .csv', () async {
+    final path = await CsvExporter.writeToFile('Test,CSV\n1,2');
+    expect(path.isNotEmpty, isTrue);
+    expect(path.endsWith('.csv'), isTrue);
   });
 }

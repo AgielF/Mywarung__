@@ -70,8 +70,10 @@ class _InventoryFormScreenState extends State<InventoryFormScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(content: Text('Error: $msg')),
         );
       }
     } finally {

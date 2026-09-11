@@ -5,6 +5,8 @@ import 'package:pos_warung_ai/domain/customer/repositories/customer_repository.d
 import 'package:pos_warung_ai/domain/customer/repositories/debt_repository.dart';
 import 'package:pos_warung_ai/ui/customer/customer_list_screen.dart';
 import 'package:pos_warung_ai/domain/customer/entities/debt.dart';
+import 'package:pos_warung_ai/domain/sales/repositories/transaction_repository.dart';
+import 'package:pos_warung_ai/domain/sales/entities/transaction.dart';
 
 class MockCustomerRepository implements CustomerRepository {
   List<Customer> _customers = [];
@@ -60,15 +62,32 @@ class MockDebtRepository implements DebtRepository {
   Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
 }
 
+
+class MockTransactionRepository implements TransactionRepository {
+  @override
+  Stream<List<Transaction>> watchAll({DateTime? from, DateTime? to}) async* {}
+
+  @override
+  Future<List<Transaction>> getAll({DateTime? from, DateTime? to}) async => [];
+
+  @override
+  Future<Transaction?> getById(int id) async => null;
+
+  @override
+  Future<int> create(Transaction transaction) async => 1;
+}
+
 void main() {
   testWidgets('CustomerListScreen shows empty state', (WidgetTester tester) async {
     final customerRepo = MockCustomerRepository();
     final debtRepo = MockDebtRepository();
+    final txRepo = MockTransactionRepository();
 
     await tester.pumpWidget(MaterialApp(
       home: CustomerListScreen(
         customerRepository: customerRepo,
         debtRepository: debtRepo,
+        transactionRepository: txRepo,
       ),
     ));
 
@@ -84,11 +103,13 @@ void main() {
       Customer(id: 2, tenantId: 'tenant-1', name: 'Ani', phone: '08123456789', createdAt: DateTime.now()),
     ]);
     final debtRepo = MockDebtRepository();
+    final txRepo = MockTransactionRepository();
 
     await tester.pumpWidget(MaterialApp(
       home: CustomerListScreen(
         customerRepository: customerRepo,
         debtRepository: debtRepo,
+        transactionRepository: txRepo,
       ),
     ));
 
@@ -103,11 +124,13 @@ void main() {
   testWidgets('CustomerListScreen shows error state and retry button', (WidgetTester tester) async {
     final customerRepo = MockCustomerRepository(throwError: true);
     final debtRepo = MockDebtRepository();
+    final txRepo = MockTransactionRepository();
 
     await tester.pumpWidget(MaterialApp(
       home: CustomerListScreen(
         customerRepository: customerRepo,
         debtRepository: debtRepo,
+        transactionRepository: txRepo,
       ),
     ));
 

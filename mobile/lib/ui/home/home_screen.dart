@@ -100,6 +100,7 @@ class HomeScreen extends StatelessWidget {
                         builder: (context) => CustomerListScreen(
                           customerRepository: customerRepository,
                           debtRepository: debtRepository,
+                          transactionRepository: transactionRepository,
                         ),
                       ),
                     );
@@ -129,6 +130,8 @@ class HomeScreen extends StatelessWidget {
                         builder: (context) => DebtOutstandingScreen(
                           debtOutstandingRepository: debtOutstandingRepository,
                           debtRepository: debtRepository,
+                          customerRepository: customerRepository,
+                          transactionRepository: transactionRepository,
                         ),
                       ),
                     );

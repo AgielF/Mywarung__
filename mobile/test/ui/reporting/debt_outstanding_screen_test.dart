@@ -7,6 +7,43 @@ import 'package:pos_warung_ai/domain/reporting/repositories/debt_outstanding_rep
 import 'package:pos_warung_ai/domain/customer/repositories/debt_repository.dart';
 import 'package:pos_warung_ai/ui/reporting/debt_outstanding_screen.dart';
 import 'package:pos_warung_ai/domain/customer/entities/debt.dart';
+import 'package:pos_warung_ai/domain/customer/repositories/customer_repository.dart';
+import 'package:pos_warung_ai/domain/sales/repositories/transaction_repository.dart';
+import 'package:pos_warung_ai/domain/sales/entities/transaction.dart';
+
+class MockCustomerRepository implements CustomerRepository {
+  @override
+  Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* {}
+
+  @override
+  Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
+
+  @override
+  Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
+
+  @override
+  Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
+
+  @override
+  Future<void> update(Customer customer, {String tenantId = 'tenant-1'}) async {}
+
+  @override
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
+}
+
+class MockTransactionRepository implements TransactionRepository {
+  @override
+  Stream<List<Transaction>> watchAll({DateTime? from, DateTime? to}) async* {}
+
+  @override
+  Future<List<Transaction>> getAll({DateTime? from, DateTime? to}) async => [];
+
+  @override
+  Future<Transaction?> getById(int id) async => null;
+
+  @override
+  Future<int> create(Transaction transaction) async => 1;
+}
 
 class FakeDebtOutstandingRepository implements DebtOutstandingRepository {
   DebtOutstandingReport? report;
@@ -58,10 +95,14 @@ class FakeDebtRepository implements DebtRepository {
 void main() {
   late FakeDebtOutstandingRepository repo;
   late FakeDebtRepository debtRepo;
+  late MockCustomerRepository customerRepo;
+  late MockTransactionRepository txRepo;
 
   setUp(() {
     repo = FakeDebtOutstandingRepository();
     debtRepo = FakeDebtRepository();
+    customerRepo = MockCustomerRepository();
+    txRepo = MockTransactionRepository();
   });
 
   Widget createWidget() {
@@ -69,6 +110,8 @@ void main() {
       home: DebtOutstandingScreen(
         debtOutstandingRepository: repo,
         debtRepository: debtRepo,
+        customerRepository: customerRepo,
+        transactionRepository: txRepo,
       ),
     );
   }

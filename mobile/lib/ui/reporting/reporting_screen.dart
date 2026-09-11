@@ -170,13 +170,19 @@ class _ReportingScreenState extends State<ReportingScreen> {
       final csv = CsvExporter.dailyReportToCsv(trend);
       final path = await CsvExporter.writeToFile(csv);
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('CSV tersimpan di: ${path.length > 30 ? "...${path.substring(path.length - 30)}" : path}')),
+        SnackBar(
+          content: Text('CSV tersimpan di: $path'),
+          duration: const Duration(seconds: 4),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
+      final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal export CSV')),
+        SnackBar(content: Text('Gagal export CSV: $msg')),
       );
     }
   }

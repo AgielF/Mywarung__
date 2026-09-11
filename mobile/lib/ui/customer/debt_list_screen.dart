@@ -3,14 +3,23 @@ import '../../domain/customer/entities/customer.dart';
 import '../../domain/customer/entities/debt.dart';
 import '../../domain/customer/repositories/debt_repository.dart';
 
+import '../../domain/sales/entities/transaction.dart';
+import '../../domain/sales/repositories/transaction_repository.dart';
+import '../../domain/customer/repositories/customer_repository.dart';
+import 'customer_form_screen.dart';
+
 class DebtListScreen extends StatefulWidget {
   final Customer customer;
   final DebtRepository debtRepository;
+  final CustomerRepository customerRepository;
+  final TransactionRepository transactionRepository;
 
   const DebtListScreen({
     super.key,
     required this.customer,
     required this.debtRepository,
+    required this.customerRepository,
+    required this.transactionRepository,
   });
 
   @override
@@ -19,6 +28,79 @@ class DebtListScreen extends StatefulWidget {
 
 class _DebtListScreenState extends State<DebtListScreen> {
   int _streamKey = 0;
+  List<Transaction> _customerTransactions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTransactions();
+  }
+
+  Future<void> _loadTransactions() async {
+    final txs = await widget.transactionRepository.getAll();
+    if (mounted) {
+      setState(() {
+        _customerTransactions = txs.where((t) => t.customerId == widget.customer.id && t.paymentMethod.name == 'debt').toList();
+      });
+    }
+  }
+
+  Map<int, String> _loadDebtDescriptions(List<Debt> debts) {
+    Map<int, String> descriptions = {};
+    for (final debt in debts) {
+      final txMatch = _customerTransactions.where((t) => (t.total - debt.amount).abs() < 0.01).toList();
+      if (txMatch.isNotEmpty) {
+        final tx = txMatch.first;
+        if (tx.items.isNotEmpty) {
+          final itemNames = tx.items.map((i) => i.productName).join(', ');
+          descriptions[debt.id!] = 'Untuk: ${tx.items.length} item ($itemNames)';
+        } else {
+          descriptions[debt.id!] = 'Transaksi ${tx.createdAt.day}/${tx.createdAt.month} ${tx.createdAt.hour}:${tx.createdAt.minute}';
+        }
+      }
+    }
+    return descriptions;
+  }
+
+  void _deleteCustomer() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hapus Customer'),
+        content: Text('Yakin ingin menghapus ${widget.customer.name}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      if (!mounted) return;
+      try {
+        await widget.customerRepository.delete(widget.customer.id!);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Customer berhasil dihapus')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        if (!mounted) return;
+        final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal: $msg')),
+        );
+      }
+    }
+  }
 
   void _payDebt(Debt debt) async {
     final controller = TextEditingController(text: debt.remainingAmount.toStringAsFixed(0));
@@ -79,14 +161,17 @@ class _DebtListScreenState extends State<DebtListScreen> {
         final payment = double.parse(controller.text);
         await widget.debtRepository.payDebt(debtId: debt.id!, payment: payment);
         if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Pembayaran berhasil dicatat')),
           );
         }
       } catch (e) {
         if (mounted) {
+          final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal: ${e.toString()}')),
+            SnackBar(content: Text('Gagal: $msg')),
           );
         }
       }
@@ -148,14 +233,17 @@ class _DebtListScreenState extends State<DebtListScreen> {
           amount: amount,
         );
         if (mounted) {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Kasbon berhasil ditambahkan')),
           );
         }
       } catch (e) {
         if (mounted) {
+          final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal: ${e.toString()}')),
+            SnackBar(content: Text('Gagal: $msg')),
           );
         }
       }
@@ -168,6 +256,29 @@ class _DebtListScreenState extends State<DebtListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Kasbon: ${widget.customer.name}'),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'edit') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CustomerFormScreen(
+                      customerRepository: widget.customerRepository,
+                      customer: widget.customer,
+                    ),
+                  ),
+                );
+              } else if (value == 'delete') {
+                _deleteCustomer();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'edit', child: Text('Edit Customer')),
+              const PopupMenuItem(value: 'delete', child: Text('Hapus Customer', style: TextStyle(color: Colors.red))),
+            ],
+          ),
+        ],
       ),
       body: StreamBuilder<List<Debt>>(
         key: ValueKey(_streamKey),
@@ -192,6 +303,7 @@ class _DebtListScreenState extends State<DebtListScreen> {
           }
 
           final debts = snapshot.data ?? [];
+          final descriptions = _loadDebtDescriptions(debts);
 
           final totalKasbon = debts.fold(0.0, (sum, debt) => sum + debt.amount);
           final totalDibayar = debts.fold(0.0, (sum, debt) => sum + debt.paid);
@@ -218,10 +330,19 @@ class _DebtListScreenState extends State<DebtListScreen> {
                         itemCount: debts.length,
                         itemBuilder: (context, index) {
                           final debt = debts[index];
+                          final desc = descriptions[debt.id];
                           return ListTile(
                             title: Text('Rp ${debt.amount}'),
-                            subtitle: Text(
-                                'Sisa: Rp ${debt.remainingAmount} • ${debt.status.name}'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Sisa: Rp ${debt.remainingAmount} • ${debt.status.name}'),
+                                if (desc != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(desc, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                ],
+                              ],
+                            ),
                             trailing: !debt.isPaid
                                 ? ElevatedButton(
                                     onPressed: () => _payDebt(debt),

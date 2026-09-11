@@ -4,14 +4,21 @@ import '../../domain/reporting/entities/debt_outstanding_report.dart';
 import '../../domain/reporting/repositories/debt_outstanding_repository.dart';
 import '../customer/debt_list_screen.dart';
 
+import '../../domain/customer/repositories/customer_repository.dart';
+import '../../domain/sales/repositories/transaction_repository.dart';
+
 class DebtOutstandingScreen extends StatefulWidget {
   final DebtOutstandingRepository debtOutstandingRepository;
   final DebtRepository debtRepository;
+  final CustomerRepository customerRepository;
+  final TransactionRepository transactionRepository;
 
   const DebtOutstandingScreen({
     super.key,
     required this.debtOutstandingRepository,
     required this.debtRepository,
+    required this.customerRepository,
+    required this.transactionRepository,
   });
 
   @override
@@ -143,6 +150,8 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                             builder: (context) => DebtListScreen(
                               customer: summary.customer,
                               debtRepository: widget.debtRepository,
+                              customerRepository: widget.customerRepository,
+                              transactionRepository: widget.transactionRepository,
                             ),
                           ),
                         ).then((_) {

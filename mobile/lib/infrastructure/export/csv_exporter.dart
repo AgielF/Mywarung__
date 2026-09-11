@@ -32,7 +32,12 @@ class CsvExporter {
     final defaultFilename = 'laporan_penjualan_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.csv';
     final name = filename ?? defaultFilename;
 
-    final directory = await getApplicationDocumentsDirectory();
+    Directory? directory;
+    try {
+      directory = await getExternalStorageDirectory();
+    } catch (_) {}
+    directory ??= await getApplicationDocumentsDirectory();
+
     final path = '${directory.path}/$name';
     final file = File(path);
     
