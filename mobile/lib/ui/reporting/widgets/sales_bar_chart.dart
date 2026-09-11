@@ -31,41 +31,48 @@ class SalesBarChart extends StatelessWidget {
 
     return SizedBox(
       height: 200, // 150 for bar + 50 for labels
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: trendData.map((point) {
-          double barHeight = 0;
-          if (point.totalSales > 0) {
-            barHeight = (point.totalSales / maxSales) * 150;
-            if (barHeight < 4) barHeight = 4;
-          }
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: trendData.map((point) {
+            double barHeight = 0;
+            if (point.totalSales > 0) {
+              barHeight = (point.totalSales / maxSales) * 150;
+              if (barHeight < 4) barHeight = 4;
+            }
 
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              if (point.totalSales > 0)
-                Text(
-                  '${(point.totalSales / 1000).toStringAsFixed(0)}k',
-                  style: const TextStyle(fontSize: 10, color: Colors.black54),
-                ),
-              const SizedBox(height: 4),
-              Container(
-                width: 32,
-                height: barHeight,
-                decoration: BoxDecoration(
-                  color: Colors.green.shade400,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                ),
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (point.totalSales > 0)
+                    Text(
+                      '${(point.totalSales / 1000).toStringAsFixed(0)}k',
+                      style: const TextStyle(fontSize: 10, color: Colors.black54),
+                    ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: 32,
+                    height: barHeight,
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade400,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${point.date.day.toString().padLeft(2, '0')}/${point.date.month.toString().padLeft(2, '0')}',
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${point.date.day.toString().padLeft(2, '0')}/${point.date.month.toString().padLeft(2, '0')}',
-                style: const TextStyle(fontSize: 10),
-              ),
-            ],
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }

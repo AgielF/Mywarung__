@@ -51,6 +51,13 @@ class DriftReportingRepository implements ReportingRepository {
   }
 
   @override
+  Stream<List<DailyReport>> watchRangeReport(DateTime from, DateTime to, {String tenantId = 'tenant-1'}) {
+    return _db.select(_db.transactions).watch().asyncMap((_) {
+      return getRangeReport(from, to, tenantId: tenantId);
+    });
+  }
+
+  @override
   Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -96,9 +103,13 @@ class DriftReportingRepository implements ReportingRepository {
 
     final productNames = <int, String>{};
     if (productIds.isNotEmpty) {
+      // READ-ONLY cross-domain query ke tabel products. Reporting adalah
+      // read-model lintas modul (ADR-005). Untuk Fase 2, pertimbangkan
+      // denormalisasi product_name di transaction_items.
       final productsData = await (_db.select(_db.products)
-        ..where((tbl) => tbl.tenantId.equals(tenantId))
-        ..where((tbl) => tbl.id.isIn(productIds))).get();
+            ..where((tbl) => tbl.tenantId.equals(tenantId))
+            ..where((tbl) => tbl.id.isIn(productIds)))
+          .get();
       for (final p in productsData) {
         productNames[p.id] = p.name;
       }

@@ -20,6 +20,7 @@ class ReportingScreen extends StatefulWidget {
 
 class _ReportingScreenState extends State<ReportingScreen> {
   int _streamKey = 0;
+  int _trendKey = 0;
   String _selectedFilter = 'Hari Ini';
   DateTime? _customFrom;
   DateTime? _customTo;
@@ -58,14 +59,12 @@ class _ReportingScreenState extends State<ReportingScreen> {
     } else if (_selectedFilter == '7 Hari Terakhir') {
       final now = DateTime.now();
       final from = now.subtract(const Duration(days: 6));
-      return Stream.fromFuture(
-          widget.reportingRepository.getRangeReport(from, now).then(_aggregateReports));
+      return widget.reportingRepository.watchRangeReport(from, now).map(_aggregateReports);
     } else {
       if (_customFrom == null || _customTo == null) {
         return Stream.value(_emptyReport());
       }
-      return Stream.fromFuture(
-          widget.reportingRepository.getRangeReport(_customFrom!, _customTo!).then(_aggregateReports));
+      return widget.reportingRepository.watchRangeReport(_customFrom!, _customTo!).map(_aggregateReports);
     }
   }
 
@@ -291,6 +290,7 @@ class _ReportingScreenState extends State<ReportingScreen> {
             ),
             const SizedBox(height: 16),
             FutureBuilder<List<SalesTrendPoint>>(
+              key: ValueKey(_trendKey),
               future: widget.reportingRepository.getSalesTrend(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -307,9 +307,24 @@ class _ReportingScreenState extends State<ReportingScreen> {
                 }
 
                 if (snapshot.hasError) {
-                  return const SizedBox(
+                  return SizedBox(
                     height: 150,
-                    child: Center(child: Text('Gagal memuat tren')),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Gagal memuat tren'),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: () {
+                              if (!mounted) return;
+                              setState(() => _trendKey++);
+                            },
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 }
 

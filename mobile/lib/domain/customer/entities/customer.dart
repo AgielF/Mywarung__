@@ -17,14 +17,14 @@ class Customer {
     int? id,
     String? tenantId,
     String? name,
-    String? phone,
+    String? Function()? phone,
     DateTime? createdAt,
   }) {
     return Customer(
       id: id ?? this.id,
       tenantId: tenantId ?? this.tenantId,
       name: name ?? this.name,
-      phone: phone ?? this.phone,
+      phone: phone != null ? phone() : this.phone,
       createdAt: createdAt ?? this.createdAt,
     );
   }

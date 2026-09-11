@@ -55,7 +55,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
         await widget.customerRepository.update(
           widget.customer!.copyWith(
             name: _nameController.text,
-            phone: _phoneController.text.isNotEmpty ? _phoneController.text : null,
+            phone: () => _phoneController.text.isNotEmpty ? _phoneController.text : null,
           ),
         );
       }
@@ -106,8 +106,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               ),
               keyboardType: TextInputType.phone,
               validator: (value) {
-                if (value != null && value.trim().length > 20) {
-                  return 'Maksimal 20 karakter';
+                if (value != null && value.trim().isNotEmpty) {
+                  final regex = RegExp(r'^[\d\-\+\s]{8,20}$');
+                  if (!regex.hasMatch(value.trim())) {
+                    return 'Format nomor telepon tidak valid';
+                  }
                 }
                 return null;
               },

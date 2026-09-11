@@ -1,53 +1,12 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_warung_ai/domain/reporting/entities/daily_report.dart';
-import 'package:pos_warung_ai/domain/reporting/repositories/reporting_repository.dart';
 import 'package:pos_warung_ai/domain/reporting/entities/sales_trend_point.dart';
 import 'package:pos_warung_ai/domain/sales/entities/transaction.dart' as sales_domain;
 import 'package:pos_warung_ai/domain/sales/entities/transaction_item.dart' as sales_domain;
 import 'package:pos_warung_ai/ui/reporting/reporting_screen.dart';
 import 'package:pos_warung_ai/ui/reporting/widgets/sales_bar_chart.dart';
-
-class FakeReportingRepository implements ReportingRepository {
-  bool throwError = false;
-  DailyReport? reportOverride;
-  List<DailyReport>? rangeOverride;
-
-  @override
-  Future<DailyReport> getDailyReport(DateTime date, {String tenantId = 'tenant-1'}) async {
-    if (throwError) throw Exception('Test error');
-    return reportOverride ?? DailyReport(
-      date: date,
-      totalSales: 0,
-      transactionCount: 0,
-      breakdown: [
-        const PaymentMethodBreakdown(method: sales_domain.PaymentMethod.cash, transactionCount: 0, totalAmount: 0),
-        const PaymentMethodBreakdown(method: sales_domain.PaymentMethod.qris, transactionCount: 0, totalAmount: 0),
-        const PaymentMethodBreakdown(method: sales_domain.PaymentMethod.debt, transactionCount: 0, totalAmount: 0),
-      ],
-      transactions: [],
-    );
-  }
-
-  @override
-  Stream<DailyReport> watchDailyReport(DateTime date, {String tenantId = 'tenant-1'}) async* {
-    if (throwError) throw Exception('Test error');
-    yield await getDailyReport(date, tenantId: tenantId);
-  }
-
-  @override
-  Future<List<DailyReport>> getRangeReport(DateTime from, DateTime to, {String tenantId = 'tenant-1'}) async {
-    if (throwError) throw Exception('Test error');
-    return rangeOverride ?? [];
-  }
-
-  @override
-  Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async {
-    if (throwError) throw Exception('Test error');
-    return [];
-  }
-}
+import '../../helpers/fakes.dart';
 
 void main() {
   late FakeReportingRepository reportingRepo;
@@ -76,7 +35,7 @@ void main() {
   });
 
   testWidgets('menampilkan list transaksi dan summary jika ada data', (tester) async {
-    reportingRepo.reportOverride = DailyReport(
+    reportingRepo.fakeDailyReport = DailyReport(
       date: DateTime.now(),
       totalSales: 15000,
       transactionCount: 2,
@@ -120,7 +79,7 @@ void main() {
   });
 
   testWidgets('filter chip bekerja (ubah ke 7 Hari Terakhir)', (tester) async {
-    reportingRepo.rangeOverride = [
+    reportingRepo.fakeRangeReport = [
       DailyReport(
         date: DateTime.now().subtract(const Duration(days: 1)),
         totalSales: 20000,
@@ -164,6 +123,30 @@ void main() {
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
     await tester.pumpAndSettle();
     expect(find.text('Belum ada transaksi'), findsOneWidget);
+  });
+
+  testWidgets('retry tren (error state -> tap Coba Lagi -> refetch)', (tester) async {
+    reportingRepo.throwTrendError = true;
+    
+    await tester.pumpWidget(createWidget());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gagal memuat tren'), findsOneWidget);
+    // Find multiple "Coba Lagi" since report also fails
+    expect(find.text('Coba Lagi'), findsWidgets);
+
+    reportingRepo.throwTrendError = false; 
+    reportingRepo.fakeTrend = [
+      SalesTrendPoint(date: DateTime(2023, 10, 1), totalSales: 15000, transactionCount: 2),
+    ];
+    
+    // Tap specifically on trend retry button
+    // The trend retry button is in the _buildTrendSection which is likely above or below report
+    await tester.tap(find.text('Coba Lagi').last); 
+    await tester.pumpAndSettle();
+
+    expect(find.text('Gagal memuat tren'), findsNothing);
+    expect(find.text('15k'), findsOneWidget);
   });
 
   testWidgets('SalesBarChart render dengan data', (WidgetTester tester) async {

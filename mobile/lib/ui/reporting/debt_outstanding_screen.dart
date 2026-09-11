@@ -106,7 +106,9 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                       leading: CircleAvatar(
                         backgroundColor: Colors.blue.shade100,
                         child: Text(
-                          summary.customer.name.substring(0, 1).toUpperCase(),
+                          summary.customer.name.isNotEmpty
+                              ? summary.customer.name[0].toUpperCase()
+                              : '?',
                           style: TextStyle(color: Colors.blue.shade900),
                         ),
                       ),

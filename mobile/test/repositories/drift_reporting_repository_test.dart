@@ -3,6 +3,7 @@ import 'package:drift/drift.dart' as drift;
 import 'package:pos_warung_ai/domain/sales/entities/transaction.dart' as sales_domain;
 import 'package:pos_warung_ai/infrastructure/database/app_database.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_reporting_repository.dart';
+import 'package:pos_warung_ai/domain/reporting/entities/daily_report.dart';
 
 void main() {
   late AppDatabase db;
@@ -95,6 +96,37 @@ void main() {
     final stream = repository.watchDailyReport(DateTime.now());
     final report = await stream.first;
     expect(report.transactionCount, 2);
+  });
+
+  test('watchRangeReport stream emits initial value & re-emits after insert', () async {
+    final from = DateTime.now().subtract(const Duration(days: 1));
+    final to = DateTime.now();
+    
+    final stream = repository.watchRangeReport(from, to);
+    final results = <List<DailyReport>>[];
+    
+    final sub = stream.listen((reports) {
+      results.add(reports);
+    });
+    
+    // First emission (initial state)
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(results.length, 1);
+    expect(results.first.length, 2);
+    expect(results.first.last.transactionCount, 2); // Today
+    
+    // Trigger an insert
+    await db.into(db.transactions).insert(TransactionsCompanion.insert(
+      tenantId: 'tenant-1', total: 1000, paymentMethod: 'cash', createdAt: DateTime.now(),
+    ));
+
+    // Second emission
+    await Future.delayed(const Duration(milliseconds: 50));
+    expect(results.length, 2);
+    expect(results.last.length, 2);
+    expect(results.last.last.transactionCount, 3); // Today is now 3
+
+    await sub.cancel();
   });
 
   test('getDailyReport dengan banyak transaksi tidak N+1 dan hasil benar', () async {
