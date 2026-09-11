@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_warung_ai/main.dart';
 import 'package:pos_warung_ai/domain/reporting/repositories/reporting_repository.dart';
 import 'package:pos_warung_ai/domain/reporting/entities/daily_report.dart';
+import 'package:pos_warung_ai/domain/reporting/entities/sales_trend_point.dart';
 import 'package:pos_warung_ai/infrastructure/database/app_database.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_product_repository.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_transaction_repository.dart';
@@ -42,4 +43,6 @@ class FakeReportingRepository implements ReportingRepository {
   Stream<DailyReport> watchDailyReport(DateTime date, {String tenantId = 'tenant-1'}) async* {}
   @override
   Future<List<DailyReport>> getRangeReport(DateTime from, DateTime to, {String tenantId = 'tenant-1'}) async => [];
+  @override
+  Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async => [];
 }

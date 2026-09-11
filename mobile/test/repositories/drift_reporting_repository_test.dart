@@ -165,4 +165,40 @@ void main() {
       }
     }
   });
+
+  test('getSalesTrend 7 hari dengan transaksi di beberapa hari berbeda -> panjang 7, urut naik, total benar', () async {
+    final trend = await repository.getSalesTrend(days: 7);
+    expect(trend.length, 7);
+
+    // Because it's ascending, the last one is today, the second to last is yesterday.
+    final today = trend.last;
+    expect(today.transactionCount, 2); // from setup
+    expect(today.totalSales, 9000.0);
+
+    final yesterday = trend[trend.length - 2];
+    expect(yesterday.transactionCount, 1); // from setup (debt)
+    expect(yesterday.totalSales, 9000.0);
+
+    final twoDaysAgo = trend[trend.length - 3];
+    expect(twoDaysAgo.transactionCount, 0);
+    expect(twoDaysAgo.totalSales, 0.0);
+
+    // Check ascending order
+    for (int i = 0; i < trend.length - 1; i++) {
+      expect(trend[i].date.isBefore(trend[i+1].date), isTrue);
+    }
+  });
+
+  test('getSalesTrend tanpa transaksi -> semua total = 0, panjang list = 7', () async {
+    // Clear transactions
+    await db.delete(db.transactions).go();
+    
+    final trend = await repository.getSalesTrend(days: 7);
+    expect(trend.length, 7);
+
+    for (final point in trend) {
+      expect(point.totalSales, 0.0);
+      expect(point.transactionCount, 0);
+    }
+  });
 }

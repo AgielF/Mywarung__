@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../domain/reporting/entities/daily_report.dart';
+import '../../domain/reporting/entities/sales_trend_point.dart';
 import '../../domain/reporting/repositories/reporting_repository.dart';
 import '../../domain/sales/entities/transaction.dart';
+import '../../infrastructure/export/csv_exporter.dart';
+import 'widgets/sales_bar_chart.dart';
 
 class ReportingScreen extends StatefulWidget {
   final ReportingRepository reportingRepository;
@@ -162,11 +165,34 @@ class _ReportingScreenState extends State<ReportingScreen> {
     }
   }
 
+  Future<void> _exportCsv() async {
+    try {
+      final trend = await widget.reportingRepository.getSalesTrend();
+      final csv = CsvExporter.dailyReportToCsv(trend);
+      final path = await CsvExporter.writeToFile(csv);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('CSV tersimpan di: ${path.length > 30 ? "...${path.substring(path.length - 30)}" : path}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal export CSV')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Laporan Penjualan'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _exportCsv,
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -200,6 +226,7 @@ class _ReportingScreenState extends State<ReportingScreen> {
 
                 return CustomScrollView(
                   slivers: [
+                    SliverToBoxAdapter(child: _buildTrendSection()),
                     SliverToBoxAdapter(child: _buildSummaryCard(report)),
                     SliverToBoxAdapter(child: _buildBreakdown(report)),
                     SliverToBoxAdapter(
@@ -246,6 +273,51 @@ class _ReportingScreenState extends State<ReportingScreen> {
             onSelected: (_) => _onFilterChanged('Custom'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTrendSection() {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Tren 7 Hari',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            FutureBuilder<List<SalesTrendPoint>>(
+              future: widget.reportingRepository.getSalesTrend(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SizedBox(
+                    height: 150,
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return const SizedBox(
+                    height: 150,
+                    child: Center(child: Text('Gagal memuat tren')),
+                  );
+                }
+
+                return SalesBarChart(trendData: snapshot.data ?? []);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

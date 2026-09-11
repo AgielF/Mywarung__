@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pos_warung_ai/domain/reporting/entities/daily_report.dart';
 import 'package:pos_warung_ai/domain/reporting/repositories/reporting_repository.dart';
+import 'package:pos_warung_ai/domain/reporting/entities/sales_trend_point.dart';
 import 'package:pos_warung_ai/domain/sales/entities/transaction.dart' as sales_domain;
 import 'package:pos_warung_ai/domain/sales/entities/transaction_item.dart' as sales_domain;
 import 'package:pos_warung_ai/ui/reporting/reporting_screen.dart';
+import 'package:pos_warung_ai/ui/reporting/widgets/sales_bar_chart.dart';
 
 class FakeReportingRepository implements ReportingRepository {
   bool throwError = false;
@@ -39,6 +41,12 @@ class FakeReportingRepository implements ReportingRepository {
     if (throwError) throw Exception('Test error');
     return rangeOverride ?? [];
   }
+
+  @override
+  Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async {
+    if (throwError) throw Exception('Test error');
+    return [];
+  }
 }
 
 void main() {
@@ -60,6 +68,8 @@ void main() {
     await tester.pumpWidget(createWidget());
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
     expect(find.text('Belum ada transaksi'), findsOneWidget);
     expect(find.text('Rp 0'), findsWidgets);
     expect(find.text('0'), findsWidgets); 
@@ -147,6 +157,41 @@ void main() {
     await tester.tap(find.text('Coba Lagi'));
     await tester.pumpAndSettle();
 
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1000));
+    await tester.pumpAndSettle();
     expect(find.text('Belum ada transaksi'), findsOneWidget);
+  });
+
+  testWidgets('SalesBarChart render dengan data', (WidgetTester tester) async {
+    final trendData = [
+      SalesTrendPoint(date: DateTime(2023, 10, 1), totalSales: 15000, transactionCount: 2),
+      SalesTrendPoint(date: DateTime(2023, 10, 2), totalSales: 0, transactionCount: 0),
+    ];
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: SalesBarChart(trendData: trendData)),
+    ));
+
+    expect(find.text('15k'), findsOneWidget);
+    expect(find.text('01/10'), findsOneWidget);
+    expect(find.text('02/10'), findsOneWidget);
+    expect(find.byType(Container), findsWidgets); // bars
+  });
+
+  testWidgets('SalesBarChart render "Belum ada data penjualan" saat semua 0', (WidgetTester tester) async {
+    final trendData = [
+      SalesTrendPoint(date: DateTime(2023, 10, 1), totalSales: 0, transactionCount: 0),
+      SalesTrendPoint(date: DateTime(2023, 10, 2), totalSales: 0, transactionCount: 0),
+    ];
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: SalesBarChart(trendData: trendData)),
+    ));
+
+    expect(find.text('Belum ada data penjualan'), findsOneWidget);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import '../../domain/reporting/entities/daily_report.dart';
+import '../../domain/reporting/entities/sales_trend_point.dart';
 import '../../domain/reporting/repositories/reporting_repository.dart';
 import '../../domain/sales/entities/transaction.dart' as sales_domain;
 import '../../domain/sales/entities/transaction_item.dart' as sales_domain;
@@ -47,6 +48,28 @@ class DriftReportingRepository implements ReportingRepository {
     }
     
     return reports;
+  }
+
+  @override
+  Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = today.subtract(Duration(days: days - 1));
+
+    final List<SalesTrendPoint> trend = [];
+    DateTime current = start;
+
+    while (!current.isAfter(today)) {
+      final report = await getDailyReport(current, tenantId: tenantId);
+      trend.add(SalesTrendPoint(
+        date: current,
+        totalSales: report.totalSales,
+        transactionCount: report.transactionCount,
+      ));
+      current = current.add(const Duration(days: 1));
+    }
+
+    return trend;
   }
 
   Future<List<sales_domain.Transaction>> _getTransactions(DateTime start, DateTime end, String tenantId) async {
