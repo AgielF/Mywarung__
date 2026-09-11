@@ -57,22 +57,42 @@ class DriftReportingRepository implements ReportingRepository {
       ..orderBy([(tbl) => OrderingTerm(expression: tbl.createdAt, mode: OrderingMode.desc)]);
 
     final transactionsData = await query.get();
+    if (transactionsData.isEmpty) return [];
+
+    final transactionIds = transactionsData.map((t) => t.id).toList();
+
+    final itemsData = await (_db.select(_db.transactionItems)
+      ..where((tbl) => tbl.transactionId.isIn(transactionIds))).get();
+
+    final itemsByTransaction = <int, List<drift.TransactionItem>>{};
+    final productIds = <int>{};
+    for (final item in itemsData) {
+      itemsByTransaction.putIfAbsent(item.transactionId, () => []).add(item);
+      productIds.add(item.productId);
+    }
+
+    final productNames = <int, String>{};
+    if (productIds.isNotEmpty) {
+      final productsData = await (_db.select(_db.products)
+        ..where((tbl) => tbl.tenantId.equals(tenantId))
+        ..where((tbl) => tbl.id.isIn(productIds))).get();
+      for (final p in productsData) {
+        productNames[p.id] = p.name;
+      }
+    }
     
     List<sales_domain.Transaction> transactions = [];
     for (final tData in transactionsData) {
-      final itemsData = await (_db.select(_db.transactionItems)
-        ..where((tbl) => tbl.transactionId.equals(tData.id))).get();
+      final tItemsData = itemsByTransaction[tData.id] ?? [];
       
       List<sales_domain.TransactionItem> domainItems = [];
-      for (final itemData in itemsData) {
-        final product = await (_db.select(_db.products)
-          ..where((tbl) => tbl.tenantId.equals(tenantId))
-          ..where((tbl) => tbl.id.equals(itemData.productId))).getSingleOrNull();
+      for (final itemData in tItemsData) {
+        final productName = productNames[itemData.productId] ?? 'Unknown';
           
         domainItems.add(sales_domain.TransactionItem(
           id: itemData.id,
           productId: itemData.productId,
-          productName: product?.name ?? 'Unknown',
+          productName: productName,
           quantity: itemData.quantity,
           price: itemData.price,
           subtotal: itemData.subtotal,
