@@ -5,7 +5,6 @@ import 'package:pos_warung_ai/domain/reporting/entities/daily_report.dart';
 import 'package:pos_warung_ai/domain/reporting/repositories/reporting_repository.dart';
 import 'package:pos_warung_ai/domain/sales/entities/transaction.dart' as sales_domain;
 import 'package:pos_warung_ai/domain/sales/entities/transaction_item.dart' as sales_domain;
-import 'package:pos_warung_ai/domain/sales/repositories/transaction_repository.dart';
 import 'package:pos_warung_ai/ui/reporting/reporting_screen.dart';
 
 class FakeReportingRepository implements ReportingRepository {
@@ -42,31 +41,17 @@ class FakeReportingRepository implements ReportingRepository {
   }
 }
 
-class FakeTransactionRepository implements TransactionRepository {
-  @override
-  Future<int> create(sales_domain.Transaction transaction) async => 1;
-  @override
-  Future<sales_domain.Transaction?> getById(int id) async => null;
-  @override
-  Future<List<sales_domain.Transaction>> getAll({DateTime? from, DateTime? to}) async => [];
-  @override
-  Stream<List<sales_domain.Transaction>> watchAll({DateTime? from, DateTime? to}) async* { yield []; }
-}
-
 void main() {
   late FakeReportingRepository reportingRepo;
-  late FakeTransactionRepository transactionRepo;
 
   setUp(() {
     reportingRepo = FakeReportingRepository();
-    transactionRepo = FakeTransactionRepository();
   });
 
   Widget createWidget() {
     return MaterialApp(
       home: ReportingScreen(
         reportingRepository: reportingRepo,
-        transactionRepository: transactionRepo,
       ),
     );
   }

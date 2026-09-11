@@ -2,16 +2,13 @@ import 'package:flutter/material.dart';
 import '../../domain/reporting/entities/daily_report.dart';
 import '../../domain/reporting/repositories/reporting_repository.dart';
 import '../../domain/sales/entities/transaction.dart';
-import '../../domain/sales/repositories/transaction_repository.dart';
 
 class ReportingScreen extends StatefulWidget {
   final ReportingRepository reportingRepository;
-  final TransactionRepository transactionRepository;
 
   const ReportingScreen({
     super.key,
     required this.reportingRepository,
-    required this.transactionRepository,
   });
 
   @override

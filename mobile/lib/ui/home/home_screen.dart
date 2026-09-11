@@ -110,7 +110,6 @@ class HomeScreen extends StatelessWidget {
                       MaterialPageRoute(
                         builder: (context) => ReportingScreen(
                           reportingRepository: reportingRepository,
-                          transactionRepository: transactionRepository,
                         ),
                       ),
                     );

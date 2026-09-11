@@ -20,3 +20,8 @@ Kondisi: CustomerFormScreen hanya validasi max 20 karakter. Tidak ada
 validasi format nomor HP Indonesia.
 Fix rencana Task 9: regex validasi (mis. `^08\d{8,11}$`) atau pakai package
 phone validation.
+
+## Task 8a — Filter 7 Hari & Custom tidak reaktif
+Kondisi: ReportingScreen pakai Stream.fromFuture untuk filter range,
+jadi list transaksi tidak auto-update saat ada transaksi baru.
+Fix rencana Task 9: tambah watchRangeReport di repository atau polling.
