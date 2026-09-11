@@ -8,6 +8,8 @@ import '../sales/sales_screen.dart';
 import '../customer/customer_list_screen.dart';
 import '../reporting/reporting_screen.dart';
 import '../../domain/reporting/repositories/reporting_repository.dart';
+import '../reporting/debt_outstanding_screen.dart';
+import '../../domain/reporting/repositories/debt_outstanding_repository.dart';
 
 class HomeScreen extends StatelessWidget {
   final ProductRepository productRepository;
@@ -15,6 +17,7 @@ class HomeScreen extends StatelessWidget {
   final CustomerRepository customerRepository;
   final DebtRepository debtRepository;
   final ReportingRepository reportingRepository;
+  final DebtOutstandingRepository debtOutstandingRepository;
 
   const HomeScreen({
     super.key,
@@ -23,6 +26,7 @@ class HomeScreen extends StatelessWidget {
     required this.customerRepository,
     required this.debtRepository,
     required this.reportingRepository,
+    required this.debtOutstandingRepository,
   });
 
   @override
@@ -116,6 +120,21 @@ class HomeScreen extends StatelessWidget {
                   },
                   icon: const Icon(Icons.bar_chart),
                   label: const Text('Laporan', textAlign: TextAlign.center),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DebtOutstandingScreen(
+                          debtOutstandingRepository: debtOutstandingRepository,
+                          debtRepository: debtRepository,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.account_balance_wallet),
+                  label: const Text('Piutang'),
                 ),
               ],
             ),

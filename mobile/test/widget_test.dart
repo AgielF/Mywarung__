@@ -10,6 +10,8 @@ import 'package:pos_warung_ai/infrastructure/repositories/drift_transaction_repo
 import 'package:pos_warung_ai/infrastructure/repositories/drift_customer_repository.dart';
 import 'package:pos_warung_ai/infrastructure/repositories/drift_debt_repository.dart';
 
+import 'package:pos_warung_ai/infrastructure/repositories/drift_debt_outstanding_repository.dart';
+
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
     final database = AppDatabase.memory();
@@ -26,6 +28,7 @@ void main() {
       customerRepository: customerRepo,
       debtRepository: debtRepo,
       reportingRepository: reportingRepo,
+      debtOutstandingRepository: DriftDebtOutstandingRepository(database),
     ));
 
     // Verify that the title text is present.
