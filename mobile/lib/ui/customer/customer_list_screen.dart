@@ -20,6 +20,8 @@ class CustomerListScreen extends StatefulWidget {
 }
 
 class _CustomerListScreenState extends State<CustomerListScreen> {
+  int _streamKey = 0;
+
   void _navigateToForm([Customer? customer]) {
     Navigator.push(
       context,
@@ -87,6 +89,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
         title: const Text('Customer & Kasbon'),
       ),
       body: StreamBuilder<List<Customer>>(
+        key: ValueKey(_streamKey),
         stream: widget.customerRepository.watchAll(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -100,7 +103,7 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
                 children: [
                   Text('Terjadi kesalahan: ${snapshot.error}'),
                   ElevatedButton(
-                    onPressed: () => setState(() {}),
+                    onPressed: () => setState(() => _streamKey++),
                     child: const Text('Coba Lagi'),
                   ),
                 ],

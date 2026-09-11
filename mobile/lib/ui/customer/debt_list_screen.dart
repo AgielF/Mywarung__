@@ -18,6 +18,8 @@ class DebtListScreen extends StatefulWidget {
 }
 
 class _DebtListScreenState extends State<DebtListScreen> {
+  int _streamKey = 0;
+
   void _payDebt(Debt debt) async {
     final controller = TextEditingController(text: debt.remainingAmount.toStringAsFixed(0));
     final formKey = GlobalKey<FormState>();
@@ -69,21 +71,27 @@ class _DebtListScreenState extends State<DebtListScreen> {
     );
 
     if (confirm == true) {
-      if (!mounted) return;
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
       try {
         final payment = double.parse(controller.text);
         await widget.debtRepository.payDebt(debtId: debt.id!, payment: payment);
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pembayaran berhasil dicatat')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pembayaran berhasil dicatat')),
+          );
+        }
       } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: ${e.toString()}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal: ${e.toString()}')),
+          );
+        }
       }
     }
+    controller.dispose();
   }
 
   void _addDebt() async {
@@ -129,24 +137,30 @@ class _DebtListScreenState extends State<DebtListScreen> {
     );
 
     if (confirm == true) {
-      if (!mounted) return;
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
       try {
         final amount = double.parse(controller.text);
         await widget.debtRepository.createDebt(
           customerId: widget.customer.id!,
           amount: amount,
         );
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kasbon berhasil ditambahkan')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Kasbon berhasil ditambahkan')),
+          );
+        }
       } catch (e) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: ${e.toString()}')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal: ${e.toString()}')),
+          );
+        }
       }
     }
+    controller.dispose();
   }
 
   @override
@@ -156,13 +170,25 @@ class _DebtListScreenState extends State<DebtListScreen> {
         title: Text('Kasbon: ${widget.customer.name}'),
       ),
       body: StreamBuilder<List<Debt>>(
+        key: ValueKey(_streamKey),
         stream: widget.debtRepository.watchByCustomer(widget.customer.id!),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${snapshot.error}'),
+                  ElevatedButton(
+                    onPressed: () => setState(() => _streamKey++),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            );
           }
 
           final debts = snapshot.data ?? [];

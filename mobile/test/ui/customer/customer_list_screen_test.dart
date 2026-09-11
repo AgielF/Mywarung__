@@ -8,8 +8,9 @@ import 'package:pos_warung_ai/domain/customer/entities/debt.dart';
 
 class MockCustomerRepository implements CustomerRepository {
   List<Customer> _customers = [];
+  bool throwError;
 
-  MockCustomerRepository({List<Customer>? initialCustomers}) {
+  MockCustomerRepository({List<Customer>? initialCustomers, this.throwError = false}) {
     if (initialCustomers != null) {
       _customers = initialCustomers;
     }
@@ -17,6 +18,9 @@ class MockCustomerRepository implements CustomerRepository {
 
   @override
   Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* {
+    if (throwError) {
+      throw Exception('Simulated Error');
+    }
     yield _customers;
   }
 
@@ -94,5 +98,23 @@ void main() {
     expect(find.text('Ani'), findsOneWidget);
     expect(find.text('08123456789'), findsOneWidget);
     expect(find.byType(ListTile), findsNWidgets(2));
+  });
+
+  testWidgets('CustomerListScreen shows error state and retry button', (WidgetTester tester) async {
+    final customerRepo = MockCustomerRepository(throwError: true);
+    final debtRepo = MockDebtRepository();
+
+    await tester.pumpWidget(MaterialApp(
+      home: CustomerListScreen(
+        customerRepository: customerRepo,
+        debtRepository: debtRepo,
+      ),
+    ));
+
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Terjadi kesalahan'), findsOneWidget);
+    expect(find.text('Coba Lagi'), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsOneWidget);
   });
 }
