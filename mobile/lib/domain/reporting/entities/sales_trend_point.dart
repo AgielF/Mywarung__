@@ -1,6 +1,3 @@
-import 'package:flutter/foundation.dart';
-
-@immutable
 class SalesTrendPoint {
   final DateTime date;
   final double totalSales;
