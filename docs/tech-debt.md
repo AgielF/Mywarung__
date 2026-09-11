@@ -146,3 +146,26 @@ Kategori:
 **Asal:** Task 8b-1
 **Kondisi:** Pesan error tidak include `e` untuk debugging.
 **Fix:** `debugPrint('Export CSV error: $e')` (kDebugMode saja). Tunda.
+
+
+## TUNDA KE FASE 2
+
+### TD-16 — watchRangeReport tanpa tenant filter
+**Asal:** Task 9a (TD-03)
+**Kondisi:** `_db.select(_db.transactions).watch()` tanpa `.where(tenantId)`.
+Saat ini aman karena tenant hardcoded, tapi harus diperbaiki saat multi-tenant aktif.
+**Fix Fase 2:** Tambah filter tenant di watch() — butuh TenantContext.
+
+### TD-17 — watchRangeReport refetch full range tiap insert
+**Asal:** Task 9a (TD-03)
+**Kondisi:** Setiap insert transaksi memicu `getRangeReport` untuk seluruh range
+(7 hari = 21 query). Acceptable untuk MVP, tidak scalable.
+**Fix Fase 2:** Single query group by date, atau delta update.
+
+## TUNDA KE TASK SELANJUTNYA
+
+### TD-18 — FakeCustomerRepository tidak di helpers
+**Asal:** Task 9a (TD-02)
+**Kondisi:** `FakeCustomerRepository` didefinisikan lokal di
+`customer_form_screen_test.dart`, bukan di `test/helpers/fakes.dart`.
+**Fix:** Pindah saat ada penambahan test customer berikutnya.
