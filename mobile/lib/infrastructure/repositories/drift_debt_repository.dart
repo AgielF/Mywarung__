@@ -54,9 +54,11 @@ class DriftDebtRepository implements DebtRepository {
   }
 
   @override
-  Future<void> payDebt({required int debtId, required double payment}) async {
+  Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {
     await _db.transaction(() async {
-      final query = _db.select(_db.debts)..where((tbl) => tbl.id.equals(debtId));
+      final query = _db.select(_db.debts)
+        ..where((tbl) => tbl.id.equals(debtId))
+        ..where((tbl) => tbl.tenantId.equals(tenantId));
       final debtData = await query.getSingleOrNull();
 
       if (debtData == null) {
@@ -74,7 +76,10 @@ class DriftDebtRepository implements DebtRepository {
 
       final newStatus = newPaid >= debtData.amount ? 'paid' : 'unpaid';
 
-      await (_db.update(_db.debts)..where((tbl) => tbl.id.equals(debtId))).write(
+      await (_db.update(_db.debts)
+        ..where((tbl) => tbl.id.equals(debtId))
+        ..where((tbl) => tbl.tenantId.equals(tenantId))
+      ).write(
         drift.DebtsCompanion(
           paid: Value(newPaid),
           status: Value(newStatus),
@@ -85,8 +90,11 @@ class DriftDebtRepository implements DebtRepository {
   }
 
   @override
-  Future<void> delete(int id) async {
-    await (_db.delete(_db.debts)..where((tbl) => tbl.id.equals(id))).go();
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {
+    await (_db.delete(_db.debts)
+      ..where((tbl) => tbl.id.equals(id))
+      ..where((tbl) => tbl.tenantId.equals(tenantId))
+    ).go();
   }
 }
 

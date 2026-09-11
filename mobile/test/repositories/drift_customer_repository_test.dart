@@ -70,5 +70,21 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('getById dengan tenantId berbeda -> return null', () async {
+      final id = await customerRepo.create(name: 'Budi', tenantId: 'tenant-1');
+      
+      final customer = await customerRepo.getById(id, tenantId: 'tenant-2');
+      expect(customer, isNull);
+    });
+
+    test('delete customer dari tenant berbeda -> tidak menghapus', () async {
+      final id = await customerRepo.create(name: 'Budi', tenantId: 'tenant-1');
+      
+      await customerRepo.delete(id, tenantId: 'tenant-2');
+      
+      final customer = await customerRepo.getById(id, tenantId: 'tenant-1');
+      expect(customer, isNotNull);
+    });
   });
 }

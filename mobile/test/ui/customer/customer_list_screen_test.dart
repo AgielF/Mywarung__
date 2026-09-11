@@ -16,44 +16,44 @@ class MockCustomerRepository implements CustomerRepository {
   }
 
   @override
-  Stream<List<Customer>> watchAll() async* {
+  Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* {
     yield _customers;
   }
 
   @override
-  Future<Customer?> getById(int id) async => null;
+  Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
 
   @override
-  Future<List<Customer>> getAll() async => _customers;
+  Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => _customers;
 
   @override
   Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
 
   @override
-  Future<void> update(Customer customer) async {}
+  Future<void> update(Customer customer, {String tenantId = 'tenant-1'}) async {}
 
   @override
-  Future<void> delete(int id) async {}
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
 }
 
 class MockDebtRepository implements DebtRepository {
   @override
-  Stream<List<Debt>> watchAll() async* {}
+  Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
 
   @override
-  Stream<List<Debt>> watchByCustomer(int customerId) async* {}
+  Stream<List<Debt>> watchByCustomer(int customerId, {String tenantId = 'tenant-1'}) async* {}
 
   @override
-  Future<List<Debt>> getUnpaidByCustomer(int customerId) async => [];
+  Future<List<Debt>> getUnpaidByCustomer(int customerId, {String tenantId = 'tenant-1'}) async => [];
 
   @override
   Future<int> createDebt({required int customerId, required double amount, String tenantId = 'tenant-1'}) async => 1;
 
   @override
-  Future<void> payDebt({required int debtId, required double payment}) async {}
+  Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {}
 
   @override
-  Future<void> delete(int id) async {}
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
 }
 
 void main() {

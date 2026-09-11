@@ -18,8 +18,10 @@ class DriftCustomerRepository implements CustomerRepository {
   }
 
   @override
-  Future<domain.Customer?> getById(int id) async {
-    final query = _db.select(_db.customers)..where((tbl) => tbl.id.equals(id));
+  Future<domain.Customer?> getById(int id, {String tenantId = 'tenant-1'}) async {
+    final query = _db.select(_db.customers)
+      ..where((tbl) => tbl.id.equals(id))
+      ..where((tbl) => tbl.tenantId.equals(tenantId));
     final data = await query.getSingleOrNull();
     return data?.toDomain();
   }
@@ -47,8 +49,11 @@ class DriftCustomerRepository implements CustomerRepository {
   }
 
   @override
-  Future<void> update(domain.Customer customer) async {
-    await (_db.update(_db.customers)..where((tbl) => tbl.id.equals(customer.id!))).write(
+  Future<void> update(domain.Customer customer, {String tenantId = 'tenant-1'}) async {
+    await (_db.update(_db.customers)
+      ..where((tbl) => tbl.id.equals(customer.id!))
+      ..where((tbl) => tbl.tenantId.equals(tenantId))
+    ).write(
       drift.CustomersCompanion(
         name: Value(customer.name),
         phone: Value(customer.phone),
@@ -57,12 +62,13 @@ class DriftCustomerRepository implements CustomerRepository {
   }
 
   @override
-  Future<void> delete(int id) async {
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {
     await _db.transaction(() async {
       // Cek apakah customer punya debt unpaid
       final unpaidDebtsQuery = _db.select(_db.debts)
         ..where((tbl) => tbl.customerId.equals(id))
-        ..where((tbl) => tbl.status.equals('unpaid'));
+        ..where((tbl) => tbl.status.equals('unpaid'))
+        ..where((tbl) => tbl.tenantId.equals(tenantId));
         
       final unpaidDebts = await unpaidDebtsQuery.get();
       
@@ -71,10 +77,16 @@ class DriftCustomerRepository implements CustomerRepository {
       }
 
       // Hapus debt lunas milik customer (kalau ada)
-      await (_db.delete(_db.debts)..where((tbl) => tbl.customerId.equals(id))).go();
+      await (_db.delete(_db.debts)
+        ..where((tbl) => tbl.customerId.equals(id))
+        ..where((tbl) => tbl.tenantId.equals(tenantId))
+      ).go();
       
       // Hapus customer
-      await (_db.delete(_db.customers)..where((tbl) => tbl.id.equals(id))).go();
+      await (_db.delete(_db.customers)
+        ..where((tbl) => tbl.id.equals(id))
+        ..where((tbl) => tbl.tenantId.equals(tenantId))
+      ).go();
     });
   }
 }

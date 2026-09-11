@@ -80,5 +80,25 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test('payDebt dengan tenantId berbeda -> throws StateError', () async {
+      await debtRepo.createDebt(customerId: customerId, amount: 50000, tenantId: 'tenant-1');
+      final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
+
+      expect(
+        () => debtRepo.payDebt(debtId: debt.id!, payment: 10000, tenantId: 'tenant-2'),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('delete debt dari tenant berbeda -> tidak menghapus', () async {
+      await debtRepo.createDebt(customerId: customerId, amount: 50000, tenantId: 'tenant-1');
+      final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
+
+      await debtRepo.delete(debt.id!, tenantId: 'tenant-2');
+      
+      final unpaid = await debtRepo.getUnpaidByCustomer(customerId, tenantId: 'tenant-1');
+      expect(unpaid.isNotEmpty, true);
+    });
   });
 }
