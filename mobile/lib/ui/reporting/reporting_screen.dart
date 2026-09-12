@@ -9,16 +9,14 @@ import 'widgets/sales_bar_chart.dart';
 class ReportingScreen extends StatefulWidget {
   final ReportingRepository reportingRepository;
 
-  const ReportingScreen({
-    super.key,
-    required this.reportingRepository,
-  });
+  const ReportingScreen({super.key, required this.reportingRepository});
 
   @override
   State<ReportingScreen> createState() => _ReportingScreenState();
 }
 
 class _ReportingScreenState extends State<ReportingScreen> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   int _streamKey = 0;
   int _trendKey = 0;
   String _selectedFilter = 'Hari Ini';
@@ -59,12 +57,16 @@ class _ReportingScreenState extends State<ReportingScreen> {
     } else if (_selectedFilter == '7 Hari Terakhir') {
       final now = DateTime.now();
       final from = now.subtract(const Duration(days: 6));
-      return widget.reportingRepository.watchRangeReport(from, now).map(_aggregateReports);
+      return widget.reportingRepository
+          .watchRangeReport(from, now)
+          .map(_aggregateReports);
     } else {
       if (_customFrom == null || _customTo == null) {
         return Stream.value(_emptyReport());
       }
-      return widget.reportingRepository.watchRangeReport(_customFrom!, _customTo!).map(_aggregateReports);
+      return widget.reportingRepository
+          .watchRangeReport(_customFrom!, _customTo!)
+          .map(_aggregateReports);
     }
   }
 
@@ -74,9 +76,21 @@ class _ReportingScreenState extends State<ReportingScreen> {
       totalSales: 0,
       transactionCount: 0,
       breakdown: const [
-        PaymentMethodBreakdown(method: PaymentMethod.cash, transactionCount: 0, totalAmount: 0),
-        PaymentMethodBreakdown(method: PaymentMethod.qris, transactionCount: 0, totalAmount: 0),
-        PaymentMethodBreakdown(method: PaymentMethod.debt, transactionCount: 0, totalAmount: 0),
+        PaymentMethodBreakdown(
+          method: PaymentMethod.cash,
+          transactionCount: 0,
+          totalAmount: 0,
+        ),
+        PaymentMethodBreakdown(
+          method: PaymentMethod.qris,
+          transactionCount: 0,
+          totalAmount: 0,
+        ),
+        PaymentMethodBreakdown(
+          method: PaymentMethod.debt,
+          transactionCount: 0,
+          totalAmount: 0,
+        ),
       ],
       transactions: const [],
     );
@@ -117,17 +131,20 @@ class _ReportingScreenState extends State<ReportingScreen> {
       transactionCount: transactionCount,
       breakdown: [
         PaymentMethodBreakdown(
-            method: PaymentMethod.cash,
-            transactionCount: counts[PaymentMethod.cash]!,
-            totalAmount: amounts[PaymentMethod.cash]!),
+          method: PaymentMethod.cash,
+          transactionCount: counts[PaymentMethod.cash]!,
+          totalAmount: amounts[PaymentMethod.cash]!,
+        ),
         PaymentMethodBreakdown(
-            method: PaymentMethod.qris,
-            transactionCount: counts[PaymentMethod.qris]!,
-            totalAmount: amounts[PaymentMethod.qris]!),
+          method: PaymentMethod.qris,
+          transactionCount: counts[PaymentMethod.qris]!,
+          totalAmount: amounts[PaymentMethod.qris]!,
+        ),
         PaymentMethodBreakdown(
-            method: PaymentMethod.debt,
-            transactionCount: counts[PaymentMethod.debt]!,
-            totalAmount: amounts[PaymentMethod.debt]!),
+          method: PaymentMethod.debt,
+          transactionCount: counts[PaymentMethod.debt]!,
+          totalAmount: amounts[PaymentMethod.debt]!,
+        ),
       ],
       transactions: transactions,
     );
@@ -170,86 +187,89 @@ class _ReportingScreenState extends State<ReportingScreen> {
       final csv = CsvExporter.dailyReportToCsv(trend);
       final path = await CsvExporter.writeToFile(csv);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('CSV tersimpan di: $path'),
-          duration: const Duration(seconds: 4),
-        ),
-      );
+      _messengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text('CSV tersimpan di: $path'),
+            duration: const Duration(seconds: 4),
+          ),
+        );
     } catch (e) {
       if (!mounted) return;
-      final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal export CSV: $msg')),
-      );
+      final msg = e
+          .toString()
+          .replaceAll('Bad state: ', '')
+          .replaceAll('Exception: ', '');
+      _messengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text('Gagal export CSV: $msg')));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Laporan Penjualan'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.download),
-            onPressed: _exportCsv,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          _buildFilters(),
-          Expanded(
-            child: StreamBuilder<DailyReport>(
-              key: ValueKey(_streamKey),
-              stream: _getReportStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Laporan Penjualan'),
+          actions: [
+            IconButton(icon: const Icon(Icons.download), onPressed: _exportCsv),
+          ],
+        ),
+        body: Column(
+          children: [
+            _buildFilters(),
+            Expanded(
+              child: StreamBuilder<DailyReport>(
+                key: ValueKey(_streamKey),
+                stream: _getReportStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Terjadi kesalahan saat memuat laporan'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () => setState(() => _streamKey++),
-                          child: const Text('Coba Lagi'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text('Terjadi kesalahan saat memuat laporan'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () => setState(() => _streamKey++),
+                            child: const Text('Coba Lagi'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
-                final report = snapshot.data ?? _emptyReport();
+                  final report = snapshot.data ?? _emptyReport();
 
-                return CustomScrollView(
-                  slivers: [
-                    SliverToBoxAdapter(child: _buildTrendSection()),
-                    SliverToBoxAdapter(child: _buildSummaryCard(report)),
-                    SliverToBoxAdapter(child: _buildBreakdown(report)),
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          'Daftar Transaksi',
-                          style: Theme.of(context).textTheme.titleLarge,
+                  return CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(child: _buildTrendSection()),
+                      SliverToBoxAdapter(child: _buildSummaryCard(report)),
+                      SliverToBoxAdapter(child: _buildBreakdown(report)),
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Text(
+                            'Daftar Transaksi',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
                         ),
                       ),
-                    ),
-                    _buildTransactionList(report),
-                  ],
-                );
-              },
+                      _buildTransactionList(report),
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -271,9 +291,13 @@ class _ReportingScreenState extends State<ReportingScreen> {
             onSelected: (_) => _onFilterChanged('7 Hari Terakhir'),
           ),
           ChoiceChip(
-            label: Text(_selectedFilter == 'Custom' && _customFrom != null && _customTo != null
-                ? '${_formatDay(_customFrom!)} - ${_formatDay(_customTo!)}'
-                : 'Custom'),
+            label: Text(
+              _selectedFilter == 'Custom' &&
+                      _customFrom != null &&
+                      _customTo != null
+                  ? '${_formatDay(_customFrom!)} - ${_formatDay(_customTo!)}'
+                  : 'Custom',
+            ),
             selected: _selectedFilter == 'Custom',
             onSelected: (_) => _onFilterChanged('Custom'),
           ),
@@ -351,11 +375,18 @@ class _ReportingScreenState extends State<ReportingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text('Total Penjualan', style: TextStyle(fontSize: 16, color: Colors.black54)),
+            const Text(
+              'Total Penjualan',
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
             const SizedBox(height: 8),
             Text(
               _formatCurrency(report.totalSales),
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.green),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
             ),
             const Divider(height: 32),
             Row(
@@ -363,8 +394,17 @@ class _ReportingScreenState extends State<ReportingScreen> {
               children: [
                 Column(
                   children: [
-                    const Text('Jumlah Transaksi', style: TextStyle(color: Colors.black54)),
-                    Text('${report.transactionCount}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Jumlah Transaksi',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                    Text(
+                      '${report.transactionCount}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -401,11 +441,17 @@ class _ReportingScreenState extends State<ReportingScreen> {
                   children: [
                     Icon(icon, color: Colors.blue),
                     const SizedBox(height: 8),
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 4),
                     Text('${b.transactionCount} trx'),
                     const SizedBox(height: 4),
-                    Text(_formatCurrency(b.totalAmount), style: const TextStyle(fontSize: 12)),
+                    Text(
+                      _formatCurrency(b.totalAmount),
+                      style: const TextStyle(fontSize: 12),
+                    ),
                   ],
                 ),
               ),
@@ -422,32 +468,38 @@ class _ReportingScreenState extends State<ReportingScreen> {
         child: Padding(
           padding: EdgeInsets.all(32.0),
           child: Center(
-            child: Text('Belum ada transaksi', style: TextStyle(color: Colors.grey, fontSize: 16)),
+            child: Text(
+              'Belum ada transaksi',
+              style: TextStyle(color: Colors.grey, fontSize: 16),
+            ),
           ),
         ),
       );
     }
 
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final t = report.transactions[index];
-          String methodStr = t.paymentMethod == PaymentMethod.cash ? 'Tunai' : (t.paymentMethod == PaymentMethod.qris ? 'QRIS' : 'Kasbon');
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              child: Icon(
-                t.paymentMethod == PaymentMethod.cash ? Icons.payments : (t.paymentMethod == PaymentMethod.qris ? Icons.qr_code : Icons.book),
-                color: Colors.black54,
-              ),
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final t = report.transactions[index];
+        String methodStr = t.paymentMethod == PaymentMethod.cash
+            ? 'Tunai'
+            : (t.paymentMethod == PaymentMethod.qris ? 'QRIS' : 'Kasbon');
+        return ListTile(
+          leading: CircleAvatar(
+            backgroundColor: Colors.grey.shade200,
+            child: Icon(
+              t.paymentMethod == PaymentMethod.cash
+                  ? Icons.payments
+                  : (t.paymentMethod == PaymentMethod.qris
+                        ? Icons.qr_code
+                        : Icons.book),
+              color: Colors.black54,
             ),
-            title: Text(_formatCurrency(t.totalAmount)),
-            subtitle: Text('${_formatDate(t.createdAt)} • $methodStr'),
-            trailing: Text('${t.totalItems} item'),
-          );
-        },
-        childCount: report.transactions.length,
-      ),
+          ),
+          title: Text(_formatCurrency(t.totalAmount)),
+          subtitle: Text('${_formatDate(t.createdAt)} • $methodStr'),
+          trailing: Text('${t.totalItems} item'),
+        );
+      }, childCount: report.transactions.length),
     );
   }
 }

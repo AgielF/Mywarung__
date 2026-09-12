@@ -29,6 +29,7 @@ class SalesScreen extends StatefulWidget {
 }
 
 class _SalesScreenState extends State<SalesScreen> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   SalesState _state = const SalesState(isLoading: true);
   StreamSubscription<List<Product>>? _subscription;
 
@@ -89,10 +90,9 @@ class _SalesScreenState extends State<SalesScreen> {
 
   void _checkAndShowError() {
     if (_state.errorMessage != null) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_state.errorMessage!)),
-      );
+      _messengerKey.currentState
+        ?..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(_state.errorMessage!)));
       setState(() {
         _state = _state.copyWith(clearError: true);
       });
@@ -144,7 +144,9 @@ class _SalesScreenState extends State<SalesScreen> {
           ),
         );
         selectedCustomerId = await _pickCustomer();
-        if (selectedCustomerId == -1) return; // treat as cancel if they cancel the second dialog
+        if (selectedCustomerId == -1) {
+          return; // treat as cancel if they cancel the second dialog
+        }
       }
       if (selectedCustomerId == null) return; // cancelled
     }
@@ -178,13 +180,17 @@ class _SalesScreenState extends State<SalesScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        _messengerKey.currentState?.hideCurrentSnackBar();
         if (!debtSuccess) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Transaksi tersimpan, tapi kasbon gagal dicatat. Cek manual.')),
+          _messengerKey.currentState?.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Transaksi tersimpan, tapi kasbon gagal dicatat. Cek manual.',
+              ),
+            ),
           );
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
+          _messengerKey.currentState?.showSnackBar(
             const SnackBar(content: Text('Transaksi Berhasil!')),
           );
         }
@@ -194,9 +200,13 @@ class _SalesScreenState extends State<SalesScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+        _messengerKey.currentState?.hideCurrentSnackBar();
+        final msg = e
+            .toString()
+            .replaceAll('Bad state: ', '')
+            .replaceAll('Exception: ', '');
+        _messengerKey.currentState?.showSnackBar(
+          SnackBar(content: Text('Error: $msg')),
         );
         setState(() {
           _state = _state.copyWith(isLoading: false);
@@ -237,9 +247,9 @@ class _SalesScreenState extends State<SalesScreen> {
                         ],
                       );
                     }
-                    
+
                     final customers = snapshot.data ?? [];
-                    
+
                     if (customers.isEmpty) {
                       return Column(
                         mainAxisSize: MainAxisSize.min,
@@ -278,7 +288,7 @@ class _SalesScreenState extends State<SalesScreen> {
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -296,7 +306,10 @@ class _SalesScreenState extends State<SalesScreen> {
               height: MediaQuery.of(context).size.height * 0.7,
               child: Column(
                 children: [
-                  const Text('Keranjang', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Keranjang',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const Divider(),
                   Expanded(
                     child: _state.cart.isEmpty
@@ -307,14 +320,19 @@ class _SalesScreenState extends State<SalesScreen> {
                               final item = _state.cart[index];
                               return ListTile(
                                 title: Text(item.productName),
-                                subtitle: Text('Rp ${item.price} x ${item.quantity} = Rp ${item.subtotal}'),
+                                subtitle: Text(
+                                  'Rp ${item.price} x ${item.quantity} = Rp ${item.subtotal}',
+                                ),
                                 trailing: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
                                       icon: const Icon(Icons.remove),
                                       onPressed: () {
-                                        _updateQuantity(item.productId, item.quantity - 1);
+                                        _updateQuantity(
+                                          item.productId,
+                                          item.quantity - 1,
+                                        );
                                         setModalState(() {});
                                       },
                                     ),
@@ -322,15 +340,23 @@ class _SalesScreenState extends State<SalesScreen> {
                                     IconButton(
                                       icon: const Icon(Icons.add),
                                       onPressed: () {
-                                        _updateQuantity(item.productId, item.quantity + 1);
+                                        _updateQuantity(
+                                          item.productId,
+                                          item.quantity + 1,
+                                        );
                                         setModalState(() {});
                                       },
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      icon: const Icon(
+                                        Icons.delete,
+                                        color: Colors.red,
+                                      ),
                                       onPressed: () {
                                         setState(() {
-                                          _state = _state.removeFromCart(item.productId);
+                                          _state = _state.removeFromCart(
+                                            item.productId,
+                                          );
                                         });
                                         setModalState(() {});
                                       },
@@ -345,25 +371,39 @@ class _SalesScreenState extends State<SalesScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text('Rp ${_state.totalAmount}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Total:',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Text(
+                        'Rp ${_state.totalAmount}',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _state.cart.isEmpty ? null : () {
-                        Navigator.pop(context);
-                        _processPayment();
-                      },
+                      onPressed: _state.cart.isEmpty
+                          ? null
+                          : () {
+                              Navigator.pop(context);
+                              _processPayment();
+                            },
                       child: const Text('Bayar'),
                     ),
                   ),
                 ],
               ),
             );
-          }
+          },
         );
       },
     );
@@ -371,22 +411,25 @@ class _SalesScreenState extends State<SalesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Transaksi Kasir'),
-        actions: [
-          IconButton(
-            icon: Badge(
-              label: Text('${_state.totalItems}'),
-              isLabelVisible: _state.totalItems > 0,
-              child: const Icon(Icons.shopping_cart),
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Transaksi Kasir'),
+          actions: [
+            IconButton(
+              icon: Badge(
+                label: Text('${_state.totalItems}'),
+                isLabelVisible: _state.totalItems > 0,
+                child: const Icon(Icons.shopping_cart),
+              ),
+              onPressed: _showCartSheet,
             ),
-            onPressed: _showCartSheet,
-          ),
-        ],
+          ],
+        ),
+        body: _buildProductList(),
+        bottomNavigationBar: _buildBottomBar(),
       ),
-      body: _buildProductList(),
-      bottomNavigationBar: _buildBottomBar(),
     );
   }
 
@@ -396,9 +439,7 @@ class _SalesScreenState extends State<SalesScreen> {
     }
 
     if (_state.products.isEmpty) {
-      return const Center(
-        child: Text('Belum ada produk untuk dijual.'),
-      );
+      return const Center(child: Text('Belum ada produk untuk dijual.'));
     }
 
     return GridView.builder(
@@ -412,53 +453,87 @@ class _SalesScreenState extends State<SalesScreen> {
       itemCount: _state.products.length,
       itemBuilder: (context, index) {
         final product = _state.products[index];
-        final qtyInCart = _state.cart.where((item) => item.productId == product.id).fold<int>(0, (sum, item) => sum + item.quantity);
+        final qtyInCart = _state.cart
+            .where((item) => item.productId == product.id)
+            .fold<int>(0, (sum, item) => sum + item.quantity);
         return Card(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: InkWell(
-                  onTap: () => _addToCart(product),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          child: Text(product.name.isNotEmpty ? product.name[0].toUpperCase() : '?'),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        child: Text(
+                          product.name.isNotEmpty
+                              ? product.name[0].toUpperCase()
+                              : '?',
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          product.name,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        product.name,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Rp ${product.price.toStringAsFixed(0)}'),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Stok: ${product.stock}',
+                        style: TextStyle(
+                          color: product.stock > 0 ? Colors.green : Colors.red,
+                          fontSize: 12,
                         ),
-                        const SizedBox(height: 4),
-                        Text('Rp ${product.price.toStringAsFixed(0)}'),
-                        const SizedBox(height: 4),
-                        Text('Stok: ${product.stock}', style: TextStyle(color: product.stock > 0 ? Colors.green : Colors.red)),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              if (qtyInCart > 0)
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      shape: BoxShape.circle,
+                if (qtyInCart == 0)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 36,
+                    child: ElevatedButton(
+                      onPressed: () => _addToCart(product),
+                      style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
+                      child: const Text('Tambah'),
                     ),
-                    child: Text('$qtyInCart', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.remove),
+                        onPressed: () =>
+                            _updateQuantity(product.id!, qtyInCart - 1),
+                      ),
+                      Text(
+                        '$qtyInCart',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      IconButton(
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: const Icon(Icons.add),
+                        onPressed: qtyInCart >= product.stock
+                            ? null
+                            : () => _updateQuantity(product.id!, qtyInCart + 1),
+                      ),
+                    ],
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -485,10 +560,16 @@ class _SalesScreenState extends State<SalesScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Total Pembayaran', style: TextStyle(color: Colors.grey)),
+              const Text(
+                'Total Pembayaran',
+                style: TextStyle(color: Colors.grey),
+              ),
               Text(
                 'Rp ${_state.totalAmount.toStringAsFixed(0)}',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ],
           ),

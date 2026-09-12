@@ -33,9 +33,17 @@ class CsvExporter {
     final name = filename ?? defaultFilename;
 
     Directory? directory;
-    try {
-      directory = await getExternalStorageDirectory();
-    } catch (_) {}
+    if (Platform.isAndroid) {
+      final downloads = Directory('/storage/emulated/0/Download');
+      if (await downloads.exists()) {
+        directory = downloads;
+      }
+    }
+    if (directory == null) {
+      try {
+        directory = await getExternalStorageDirectory();
+      } catch (_) {}
+    }
     directory ??= await getApplicationDocumentsDirectory();
 
     final path = '${directory.path}/$name';

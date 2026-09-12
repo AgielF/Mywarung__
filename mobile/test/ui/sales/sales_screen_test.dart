@@ -90,11 +90,13 @@ void main() {
 
   Widget createWidget() {
     return MaterialApp(
-      home: SalesScreen(
-        productRepository: productRepo,
-        transactionRepository: transactionRepo,
-        customerRepository: customerRepo,
-        debtRepository: debtRepo,
+      home: Scaffold(
+        body: SalesScreen(
+          productRepository: productRepo,
+          transactionRepository: transactionRepo,
+          customerRepository: customerRepo,
+          debtRepository: debtRepo,
+        ),
       ),
     );
   }
@@ -113,7 +115,7 @@ void main() {
     await tester.pumpWidget(createWidget());
     await tester.pump();
 
-    await tester.tap(find.text('Indomie'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
     await tester.pump();
 
     expect(find.text('Rp 3000'), findsWidgets); // Rp 3000 product + Rp 3000 in bottom bar
@@ -129,7 +131,7 @@ void main() {
   testWidgets('pilih Kasbon -> dialog pilih customer tampil', (tester) async {
     await tester.pumpWidget(createWidget());
     await tester.pump();
-    await tester.tap(find.text('Indomie'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.shopping_cart));
     await tester.pumpAndSettle();
@@ -149,7 +151,7 @@ void main() {
   testWidgets('pilih Kasbon + pilih customer -> debtRepository.createDebt dipanggil', (tester) async {
     await tester.pumpWidget(createWidget());
     await tester.pump();
-    await tester.tap(find.text('Indomie'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.shopping_cart));
     await tester.pumpAndSettle();
@@ -175,7 +177,7 @@ void main() {
     
     await tester.pumpWidget(createWidget());
     await tester.pump();
-    await tester.tap(find.text('Indomie'));
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
     await tester.pump();
     await tester.tap(find.byIcon(Icons.shopping_cart));
     await tester.pumpAndSettle();
@@ -196,22 +198,79 @@ void main() {
     await tester.pumpWidget(Container());
   });
 
-  testWidgets('SalesScreen shows cart qty badge on product card', (tester) async {
+  testWidgets('SalesScreen shows Tambah button when qty=0', (tester) async {
     await tester.pumpWidget(createWidget());
     await tester.pump();
 
-    // Tap produk 1x (masuk cart)
-    await tester.tap(find.text('Indomie'));
+    // Verifikasi tombol Tambah muncul saat awal (qty=0)
+    expect(find.widgetWithText(ElevatedButton, 'Tambah'), findsOneWidget);
+    
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('SalesScreen shows [− qty +] when qty>0, + disabled at stock limit', (tester) async {
+    await tester.pumpWidget(createWidget());
     await tester.pump();
 
-    // Verifikasi badge qty muncul dengan text '1' di dalam Card produk
+    // Tap Tambah 1x (masuk cart)
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
+    await tester.pump();
+
+    // Verifikasi tombol Tambah hilang, digantikan oleh row qty controls
+    expect(find.widgetWithText(ElevatedButton, 'Tambah'), findsNothing);
+    expect(find.byIcon(Icons.remove), findsOneWidget);
+    expect(find.byIcon(Icons.add), findsOneWidget);
+    
+    // Verifikasi text '1' di dalam Card produk (di sebelah tombol remove/add)
     expect(find.descendant(of: find.byType(Card), matching: find.text('1')), findsOneWidget);
 
-    // Tap produk lagi -> quantity 2
-    await tester.tap(find.text('Indomie'));
+    // Tap icon add -> quantity 2
+    await tester.tap(find.byIcon(Icons.add));
     await tester.pump();
 
     expect(find.descendant(of: find.byType(Card), matching: find.text('2')), findsOneWidget);
+    
+    // Simulate tapping add until stock limit (stock=10)
+    for (int i = 2; i < 10; i++) {
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.pump();
+    }
+    
+    expect(find.descendant(of: find.byType(Card), matching: find.text('10')), findsOneWidget);
+    
+    // Icon add is disabled at stock limit, so tapping it should not increase
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pump();
+    
+    // Still 10
+    expect(find.descendant(of: find.byType(Card), matching: find.text('10')), findsOneWidget);
+    
+    // Tap minus -> quantity 9
+    await tester.tap(find.byIcon(Icons.remove));
+    await tester.pump();
+    expect(find.descendant(of: find.byType(Card), matching: find.text('9')), findsOneWidget);
+
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('SalesScreen tap minus when qty=1 removes item from cart', (tester) async {
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+
+    // Tap Tambah 1x (masuk cart)
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
+    await tester.pump();
+
+    // Verifikasi qty 1
+    expect(find.descendant(of: find.byType(Card), matching: find.text('1')), findsOneWidget);
+
+    // Tap minus -> remove from cart
+    await tester.tap(find.byIcon(Icons.remove));
+    await tester.pump();
+
+    // Verifikasi tombol Tambah muncul lagi
+    expect(find.widgetWithText(ElevatedButton, 'Tambah'), findsOneWidget);
+    expect(find.byIcon(Icons.remove), findsNothing);
     
     await tester.pumpWidget(Container());
   });

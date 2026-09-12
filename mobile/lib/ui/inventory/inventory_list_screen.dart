@@ -15,6 +15,7 @@ class InventoryListScreen extends StatefulWidget {
 }
 
 class _InventoryListScreenState extends State<InventoryListScreen> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   InventoryState _state = const InventoryState(isLoading: true);
   StreamSubscription<List<Product>>? _subscription;
 
@@ -87,23 +88,23 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Produk'),
-      ),
-      body: _buildBody(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => InventoryFormScreen(
-                repository: widget.repository,
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Produk')),
+        body: _buildBody(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    InventoryFormScreen(repository: widget.repository),
               ),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
+            );
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }
@@ -146,12 +147,16 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       itemCount: _state.products.length,
       itemBuilder: (context, index) {
         final product = _state.products[index];
-        final initial = product.name.isNotEmpty ? product.name[0].toUpperCase() : '?';
+        final initial = product.name.isNotEmpty
+            ? product.name[0].toUpperCase()
+            : '?';
 
         return ListTile(
           leading: CircleAvatar(child: Text(initial)),
           title: Text(product.name),
-          subtitle: Text('Stok: ${product.stock} | Rp ${product.price.toStringAsFixed(0)}'),
+          subtitle: Text(
+            'Stok: ${product.stock} | Rp ${product.price.toStringAsFixed(0)}',
+          ),
           trailing: IconButton(
             icon: const Icon(Icons.delete, color: Colors.red),
             onPressed: () => _deleteProduct(product),

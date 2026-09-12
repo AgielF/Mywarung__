@@ -24,6 +24,7 @@ class CustomerListScreen extends StatefulWidget {
 }
 
 class _CustomerListScreenState extends State<CustomerListScreen> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   int _streamKey = 0;
 
   void _navigateToForm([Customer? customer]) {
@@ -76,102 +77,110 @@ class _CustomerListScreenState extends State<CustomerListScreen> {
       try {
         await widget.customerRepository.delete(customer.id!);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Customer berhasil dihapus')),
-        );
+        _messengerKey.currentState
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text('Customer berhasil dihapus')),
+          );
       } catch (e) {
         if (!mounted) return;
-        final msg = e.toString().replaceAll('Bad state: ', '').replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $msg')),
-        );
+        final msg = e
+            .toString()
+            .replaceAll('Bad state: ', '')
+            .replaceAll('Exception: ', '');
+        _messengerKey.currentState
+          ?..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text('Gagal: $msg')));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Customer & Kasbon'),
-      ),
-      body: StreamBuilder<List<Customer>>(
-        key: ValueKey(_streamKey),
-        stream: widget.customerRepository.watchAll(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Customer & Kasbon')),
+        body: StreamBuilder<List<Customer>>(
+          key: ValueKey(_streamKey),
+          stream: widget.customerRepository.watchAll(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Terjadi kesalahan: ${snapshot.error}'),
-                  ElevatedButton(
-                    onPressed: () => setState(() => _streamKey++),
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final customers = snapshot.data;
-
-          if (customers == null || customers.isEmpty) {
-            return const Center(
-              child: Text('Belum ada customer'),
-            );
-          }
-
-          return ListView.builder(
-            itemCount: customers.length,
-            itemBuilder: (context, index) {
-              final customer = customers[index];
-              return ListTile(
-                title: Text(customer.name),
-                subtitle: Text(customer.phone ?? '-'),
-                onTap: () => _navigateToDebtList(customer),
-                onLongPress: () {
-                  showModalBottomSheet(
-                    context: context,
-                    builder: (context) => SafeArea(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ListTile(
-                            leading: const Icon(Icons.edit),
-                            title: const Text('Edit'),
-                            onTap: () {
-                              Navigator.pop(context);
-                              _navigateToForm(customer);
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.delete, color: Colors.red),
-                            title: const Text('Hapus', style: TextStyle(color: Colors.red)),
-                            onTap: () {
-                              Navigator.pop(context);
-                              _deleteCustomer(customer);
-                            },
-                          ),
-                        ],
-                      ),
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Terjadi kesalahan: ${snapshot.error}'),
+                    ElevatedButton(
+                      onPressed: () => setState(() => _streamKey++),
+                      child: const Text('Coba Lagi'),
                     ),
-                  );
-                },
+                  ],
+                ),
               );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToForm,
-        child: const Icon(Icons.add),
+            }
+
+            final customers = snapshot.data;
+
+            if (customers == null || customers.isEmpty) {
+              return const Center(child: Text('Belum ada customer'));
+            }
+
+            return ListView.builder(
+              itemCount: customers.length,
+              itemBuilder: (context, index) {
+                final customer = customers[index];
+                return ListTile(
+                  title: Text(customer.name),
+                  subtitle: Text(customer.phone ?? '-'),
+                  onTap: () => _navigateToDebtList(customer),
+                  onLongPress: () {
+                    showModalBottomSheet(
+                      context: context,
+                      builder: (context) => SafeArea(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ListTile(
+                              leading: const Icon(Icons.edit),
+                              title: const Text('Edit'),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _navigateToForm(customer);
+                              },
+                            ),
+                            ListTile(
+                              leading: const Icon(
+                                Icons.delete,
+                                color: Colors.red,
+                              ),
+                              title: const Text(
+                                'Hapus',
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _deleteCustomer(customer);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _navigateToForm,
+          child: const Icon(Icons.add),
+        ),
       ),
     );
   }

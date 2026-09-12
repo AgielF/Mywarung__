@@ -54,11 +54,13 @@ void main() {
 
   Widget createWidget() {
     return MaterialApp(
-      home: DebtListScreen(
-        customer: testCustomer,
-        debtRepository: debtRepo,
-        customerRepository: customerRepo,
-        transactionRepository: txRepo,
+      home: Scaffold(
+        body: DebtListScreen(
+          customer: testCustomer,
+          debtRepository: debtRepo,
+          customerRepository: customerRepo,
+          transactionRepository: txRepo,
+        ),
       ),
     );
   }

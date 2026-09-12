@@ -26,6 +26,7 @@ class DebtOutstandingScreen extends StatefulWidget {
 }
 
 class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   int _streamKey = 0;
 
   String _formatCurrency(double amount) {
@@ -50,64 +51,61 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Piutang Kasbon'),
-      ),
-      body: FutureBuilder<DebtOutstandingReport>(
-        key: ValueKey(_streamKey),
-        future: widget.debtOutstandingRepository.getOutstandingReport(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+    return ScaffoldMessenger(
+      key: _messengerKey,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Piutang Kasbon')),
+        body: FutureBuilder<DebtOutstandingReport>(
+          key: ValueKey(_streamKey),
+          future: widget.debtOutstandingRepository.getOutstandingReport(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Terjadi kesalahan saat memuat data'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (!mounted) return;
-                      setState(() => _streamKey++);
-                    },
-                    child: const Text('Coba Lagi'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Terjadi kesalahan saat memuat data'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (!mounted) return;
+                        setState(() => _streamKey++);
+                      },
+                      child: const Text('Coba Lagi'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          final report = snapshot.data;
-          if (report == null || report.summaries.isEmpty) {
-            return const Center(
-              child: Text(
-                'Belum ada piutang',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            );
-          }
+            final report = snapshot.data;
+            if (report == null || report.summaries.isEmpty) {
+              return const Center(
+                child: Text(
+                  'Belum ada piutang',
+                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                ),
+              );
+            }
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: _buildSummaryCard(report),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    'Daftar Customer',
-                    style: Theme.of(context).textTheme.titleLarge,
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: _buildSummaryCard(report)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'Daftar Customer',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                 ),
-              ),
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
                     final summary = report.summaries[index];
                     return ListTile(
                       leading: CircleAvatar(
@@ -121,7 +119,8 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                       ),
                       title: Text(summary.customer.name),
                       subtitle: Text(
-                        summary.customer.phone != null && summary.customer.phone!.isNotEmpty
+                        summary.customer.phone != null &&
+                                summary.customer.phone!.isNotEmpty
                             ? summary.customer.phone!
                             : 'Tanpa nomor telepon',
                       ),
@@ -139,7 +138,10 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                           ),
                           Text(
                             '${summary.unpaidCount} kasbon',
-                            style: const TextStyle(fontSize: 12, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
                           ),
                         ],
                       ),
@@ -151,7 +153,8 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                               customer: summary.customer,
                               debtRepository: widget.debtRepository,
                               customerRepository: widget.customerRepository,
-                              transactionRepository: widget.transactionRepository,
+                              transactionRepository:
+                                  widget.transactionRepository,
                             ),
                           ),
                         ).then((_) {
@@ -160,13 +163,12 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
                         });
                       },
                     );
-                  },
-                  childCount: report.summaries.length,
+                  }, childCount: report.summaries.length),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -179,11 +181,18 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const Text('Total Piutang', style: TextStyle(fontSize: 16, color: Colors.black54)),
+            const Text(
+              'Total Piutang',
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
             const SizedBox(height: 8),
             Text(
               _formatCurrency(report.totalOutstanding),
-              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.red),
+              style: const TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
             ),
             const Divider(height: 32),
             Row(
@@ -191,14 +200,32 @@ class _DebtOutstandingScreenState extends State<DebtOutstandingScreen> {
               children: [
                 Column(
                   children: [
-                    const Text('Jumlah Customer', style: TextStyle(color: Colors.black54)),
-                    Text('${report.customerCount}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Jumlah Customer',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                    Text(
+                      '${report.customerCount}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
                 Column(
                   children: [
-                    const Text('Jumlah Kasbon', style: TextStyle(color: Colors.black54)),
-                    Text('${report.debtCount}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Jumlah Kasbon',
+                      style: TextStyle(color: Colors.black54),
+                    ),
+                    Text(
+                      '${report.debtCount}',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ],
