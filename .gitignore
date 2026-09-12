@@ -22,3 +22,7 @@ mobile/*.iml
 # CSV export (test artifacts)
 *.csv
 mobile/laporan_penjualan_*.csv
+
+# CSV export (test artifacts)
+*.csv
+mobile/laporan_penjualan_*.csv
