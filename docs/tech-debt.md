@@ -169,3 +169,21 @@ Saat ini aman karena tenant hardcoded, tapi harus diperbaiki saat multi-tenant a
 **Kondisi:** `FakeCustomerRepository` didefinisikan lokal di
 `customer_form_screen_test.dart`, bukan di `test/helpers/fakes.dart`.
 **Fix:** Pindah saat ada penambahan test customer berikutnya.
+## TUNDA KE FASE 2
+
+### TD-19 — Debt ↔ Transaction link eksplisit
+**Asal:** Task 9b-2 (UX #3)
+**Kondisi:** Matching debt ke transaksi by amount — bisa ambigu kalau 2 kasbon amount sama.
+**Fix Fase 2:** Tambah `transaction_id` di tabel debts (butuh ADR + migrasi).
+
+### TD-20 — _loadTransactions load semua transaksi
+**Asal:** Task 9b-2 (UX #3)
+**Kondisi:** `DebtListScreen._loadTransactions()` panggil `getAll()` lalu filter di Dart. Tidak scalable untuk 1000+ transaksi.
+**Fix Fase 2:** Tambah method `getByCustomer(customerId, {paymentMethod})` di TransactionRepository.
+
+## TUNDA KE TASK SELANJUTNYA
+
+### TD-21 — Bandingkan enum via string `.name`
+**Asal:** Task 9b-2 (UX #3)
+**Kondisi:** `t.paymentMethod.name == 'debt'` — tidak type-safe.
+**Fix:** Ganti ke `t.paymentMethod == PaymentMethod.debt`.
