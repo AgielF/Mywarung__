@@ -55,7 +55,7 @@ class FakeProductRepository implements ProductRepository {
     yield List.from(_products);
     yield* _controller.stream;
   }
-  
+
   void dispose() {
     _controller.close();
   }
@@ -73,12 +73,12 @@ void main() {
   });
 
   Widget createWidgetUnderTest() {
-    return MaterialApp(
-      home: InventoryListScreen(repository: repository),
-    );
+    return MaterialApp(home: InventoryListScreen(repository: repository));
   }
 
-  testWidgets('renders "Belum ada produk" when empty', (WidgetTester tester) async {
+  testWidgets('renders "Belum ada produk" when empty', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(createWidgetUnderTest());
     await tester.pump();
 
@@ -101,6 +101,82 @@ void main() {
     await tester.pump();
 
     expect(find.text('Kopi Kapal Api'), findsOneWidget);
-    expect(find.text('Stok: 20 | Rp 1500'), findsOneWidget);
+    expect(find.text('Stok: 20'), findsOneWidget);
+    expect(find.text(' | Rp 1500'), findsOneWidget);
+  });
+
+  testWidgets('Filter "Stok Menipis" hanya tampilkan low stock', (
+    WidgetTester tester,
+  ) async {
+    await repository.create(
+      Product(
+        tenantId: 't1',
+        name: 'Low Stock Item',
+        price: 1000,
+        stock: 3,
+        createdAt: DateTime.now(),
+      ),
+    );
+    await repository.create(
+      Product(
+        tenantId: 't1',
+        name: 'High Stock Item',
+        price: 1000,
+        stock: 20,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Low Stock Item'), findsOneWidget);
+    expect(find.text('High Stock Item'), findsOneWidget);
+
+    await tester.tap(find.text('Stok Menipis'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Low Stock Item'), findsOneWidget);
+    expect(find.text('High Stock Item'), findsNothing);
+  });
+
+  testWidgets('Badge stok muncul untuk produk stock=3', (
+    WidgetTester tester,
+  ) async {
+    await repository.create(
+      Product(
+        tenantId: 't1',
+        name: 'Low Stock Item',
+        price: 1000,
+        stock: 3,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    final textWidget = tester.widget<Text>(find.text('Stok: 3'));
+    expect(textWidget.style?.color, Colors.red);
+  });
+
+  testWidgets('Badge tidak muncul untuk produk stock=20', (
+    WidgetTester tester,
+  ) async {
+    await repository.create(
+      Product(
+        tenantId: 't1',
+        name: 'High Stock Item',
+        price: 1000,
+        stock: 20,
+        createdAt: DateTime.now(),
+      ),
+    );
+
+    await tester.pumpWidget(createWidgetUnderTest());
+    await tester.pumpAndSettle();
+
+    final textWidget = tester.widget<Text>(find.text('Stok: 20'));
+    expect(textWidget.style?.color, null);
   });
 }

@@ -10,6 +10,9 @@ class Product {
   final DateTime? updatedAt;
   final bool isDeleted;
 
+  static const lowStockThreshold = 5;
+  bool get isLowStock => stock <= lowStockThreshold;
+
   const Product({
     this.id,
     required this.tenantId,

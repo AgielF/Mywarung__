@@ -18,6 +18,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
   InventoryState _state = const InventoryState(isLoading: true);
   StreamSubscription<List<Product>>? _subscription;
+  bool _showLowStockOnly = false;
 
   @override
   void initState() {
@@ -143,37 +144,77 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       );
     }
 
-    return ListView.builder(
-      itemCount: _state.products.length,
-      itemBuilder: (context, index) {
-        final product = _state.products[index];
-        final initial = product.name.isNotEmpty
-            ? product.name[0].toUpperCase()
-            : '?';
+    final filteredProducts = _state.products
+        .where((p) => !_showLowStockOnly || p.isLowStock)
+        .toList();
 
-        return ListTile(
-          leading: CircleAvatar(child: Text(initial)),
-          title: Text(product.name),
-          subtitle: Text(
-            'Stok: ${product.stock} | Rp ${product.price.toStringAsFixed(0)}',
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: SegmentedButton<bool>(
+            segments: const [
+              ButtonSegment<bool>(value: false, label: Text('Semua')),
+              ButtonSegment<bool>(value: true, label: Text('Stok Menipis')),
+            ],
+            selected: {_showLowStockOnly},
+            onSelectionChanged: (Set<bool> newSelection) {
+              setState(() {
+                _showLowStockOnly = newSelection.first;
+              });
+            },
           ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _deleteProduct(product),
-          ),
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => InventoryFormScreen(
-                  repository: widget.repository,
-                  product: product,
+        ),
+        Expanded(
+          child: filteredProducts.isEmpty
+              ? const Center(child: Text('Tidak ada produk yang sesuai'))
+              : ListView.builder(
+                  itemCount: filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = filteredProducts[index];
+                    final initial = product.name.isNotEmpty
+                        ? product.name[0].toUpperCase()
+                        : '?';
+
+                    return ListTile(
+                      leading: CircleAvatar(child: Text(initial)),
+                      title: Text(product.name),
+                      subtitle: Row(
+                        children: [
+                          Text(
+                            'Stok: ${product.stock}',
+                            style: product.isLowStock
+                                ? const TextStyle(color: Colors.red)
+                                : null,
+                          ),
+                          Flexible(
+                            child: Text(
+                              ' | Rp ${product.price.toStringAsFixed(0)}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteProduct(product),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InventoryFormScreen(
+                              repository: widget.repository,
+                              product: product,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              ),
-            );
-          },
-        );
-      },
+        ),
+      ],
     );
   }
 }
