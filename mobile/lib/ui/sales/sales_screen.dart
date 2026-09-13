@@ -168,11 +168,17 @@ class _SalesScreenState extends State<SalesScreen> {
       await widget.transactionRepository.create(transaction);
 
       bool debtSuccess = true;
+      DateTime? dueDate;
+      if (method == PaymentMethod.debt && selectedCustomerId != null) {
+        dueDate = await _showDueDateDialog();
+      }
+
       if (method == PaymentMethod.debt && selectedCustomerId != null) {
         try {
           await widget.debtRepository.createDebt(
             customerId: selectedCustomerId,
             amount: transaction.totalAmount,
+            dueDate: dueDate,
           );
         } catch (e) {
           debtSuccess = false;
@@ -289,6 +295,45 @@ class _SalesScreenState extends State<SalesScreen> {
               ],
             );
           },
+        );
+      },
+    );
+  }
+
+  Future<DateTime?> _showDueDateDialog() async {
+    return showDialog<DateTime?>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Jatuh Tempo Kasbon'),
+          content: const Text('Kapan kasbon ini harus dibayar?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, null),
+              child: const Text('Tanpa jatuh tempo'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: dialogContext,
+                  initialDate: DateTime.now().add(const Duration(days: 30)),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime.now().add(const Duration(days: 365)),
+                );
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext, picked);
+                }
+              },
+              child: const Text('Pilih tanggal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(
+                dialogContext,
+                DateTime.now().add(const Duration(days: 30)),
+              ),
+              child: const Text('30 hari lagi'),
+            ),
+          ],
         );
       },
     );

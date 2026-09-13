@@ -111,6 +111,7 @@ class FakeDebtRepository implements DebtRepository {
   bool createDebtCalled = false;
   double? createdAmount;
   int? createdCustomerId;
+  DateTime? createdDueDate;
 
   @override
   Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
@@ -134,6 +135,7 @@ class FakeDebtRepository implements DebtRepository {
     createDebtCalled = true;
     createdAmount = amount;
     createdCustomerId = customerId;
+    createdDueDate = dueDate;
     return 1;
   }
 
@@ -255,6 +257,9 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Budi Kasbon'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('30 hari lagi'));
       await tester.pumpAndSettle();
 
       expect(debtRepo.createDebtCalled, isTrue);
@@ -602,6 +607,72 @@ void main() {
 
     expect(find.text('Kopi'), findsOneWidget);
     expect(find.text('Rokok A'), findsOneWidget);
+
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('Kasbon pilih "30 hari lagi" -> dueDate ~now+30', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.shopping_cart));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Bayar').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kasbon'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Budi Kasbon'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('30 hari lagi'));
+    await tester.pumpAndSettle();
+
+    expect(debtRepo.createDebtCalled, isTrue);
+    expect(debtRepo.createdDueDate, isNotNull);
+    final diff = debtRepo.createdDueDate!.difference(DateTime.now()).inDays;
+    expect(diff, inInclusiveRange(29, 30));
+
+    await tester.pumpWidget(Container());
+  });
+
+  testWidgets('Kasbon pilih "Tanpa jatuh tempo" -> dueDate null', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(createWidget());
+    await tester.pump();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Tambah'));
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.shopping_cart));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Bayar').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Kasbon'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Budi Kasbon'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Tanpa jatuh tempo'));
+    await tester.pumpAndSettle();
+
+    expect(debtRepo.createDebtCalled, isTrue);
+    expect(debtRepo.createdDueDate, isNull);
 
     await tester.pumpWidget(Container());
   });
