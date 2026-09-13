@@ -204,6 +204,66 @@ class _DebtListScreenState extends State<DebtListScreen> {
     controller.dispose();
   }
 
+  String _formatDate(DateTime dt) {
+    const bulan = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
+    ];
+    return '${dt.day} ${bulan[dt.month - 1]} ${dt.year}';
+  }
+
+  Widget _buildDueDateBadge(Debt debt) {
+    if (debt.isOverdue) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          'Terlambat',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.red,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+    if (debt.isDueSoon) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.orange.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Text(
+          'Segera jatuh tempo',
+          style: TextStyle(
+            fontSize: 11,
+            color: Colors.orange,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+    final days = debt.dueDate!.difference(DateTime.now()).inDays;
+    return Text(
+      'Jatuh tempo: ${_formatDate(debt.dueDate!)} ($days hari lagi)',
+      style: const TextStyle(fontSize: 11, color: Colors.grey),
+    );
+  }
+
   void _addDebt() async {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -387,6 +447,10 @@ class _DebtListScreenState extends State<DebtListScreen> {
                                   Text(
                                     'Sisa: Rp ${debt.remainingAmount} • ${debt.status.name}',
                                   ),
+                                  if (debt.dueDate != null) ...[
+                                    const SizedBox(height: 4),
+                                    _buildDueDateBadge(debt),
+                                  ],
                                   if (desc != null) ...[
                                     const SizedBox(height: 4),
                                     Text(

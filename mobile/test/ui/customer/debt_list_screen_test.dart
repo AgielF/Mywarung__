@@ -36,6 +36,8 @@ class MockCustomerRepository implements CustomerRepository {
 }
 
 class MockDebtRepository implements DebtRepository {
+  List<Debt> debtsToYield = [];
+
   @override
   Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
   @override
@@ -43,14 +45,14 @@ class MockDebtRepository implements DebtRepository {
     int customerId, {
     String tenantId = 'tenant-1',
   }) async* {
-    yield [];
+    yield debtsToYield;
   }
 
   @override
   Future<List<Debt>> getUnpaidByCustomer(
     int customerId, {
     String tenantId = 'tenant-1',
-  }) async => [];
+  }) async => debtsToYield;
   @override
   Future<int> createDebt({
     required int customerId,
@@ -151,5 +153,66 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(customerRepo.deleteCalled, isTrue);
+  });
+
+  testWidgets('Debt overdue menampilkan badge Terlambat', (tester) async {
+    debtRepo.debtsToYield = [
+      Debt(
+        id: 1,
+        tenantId: 'tenant-1',
+        customerId: 1,
+        amount: 50000,
+        paid: 0,
+        status: DebtStatus.unpaid,
+        createdAt: DateTime.now(),
+        dueDate: DateTime.now().subtract(const Duration(days: 1)),
+      ),
+    ];
+    await tester.pumpWidget(createWidget());
+    await tester.pumpAndSettle();
+    expect(find.text('Terlambat'), findsOneWidget);
+  });
+
+  testWidgets('Debt due soon menampilkan badge Segera jatuh tempo', (
+    tester,
+  ) async {
+    debtRepo.debtsToYield = [
+      Debt(
+        id: 1,
+        tenantId: 'tenant-1',
+        customerId: 1,
+        amount: 50000,
+        paid: 0,
+        status: DebtStatus.unpaid,
+        createdAt: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 2)),
+      ),
+    ];
+    await tester.pumpWidget(createWidget());
+    await tester.pumpAndSettle();
+    expect(find.text('Segera jatuh tempo'), findsOneWidget);
+  });
+
+  testWidgets('Debt jauh dari jatuh tempo menampilkan tanggal + sisa hari', (
+    tester,
+  ) async {
+    debtRepo.debtsToYield = [
+      Debt(
+        id: 1,
+        tenantId: 'tenant-1',
+        customerId: 1,
+        amount: 50000,
+        paid: 0,
+        status: DebtStatus.unpaid,
+        createdAt: DateTime.now(),
+        dueDate: DateTime.now().add(const Duration(days: 30, hours: 1)),
+      ),
+    ];
+    await tester.pumpWidget(createWidget());
+    await tester.pumpAndSettle();
+    expect(find.text('Terlambat'), findsNothing);
+    expect(find.text('Segera jatuh tempo'), findsNothing);
+    expect(find.textContaining('Jatuh tempo:'), findsOneWidget);
+    expect(find.textContaining('30 hari lagi'), findsOneWidget);
   });
 }

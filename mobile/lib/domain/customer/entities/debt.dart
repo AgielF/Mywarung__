@@ -40,6 +40,12 @@ class Debt {
   bool get isOverdue =>
       dueDate != null && !isPaid && dueDate!.isBefore(DateTime.now());
 
+  static const dueSoonThreshold = 3;
+  bool get isDueSoon {
+    if (dueDate == null || isPaid || isOverdue) return false;
+    return dueDate!.difference(DateTime.now()).inDays <= dueSoonThreshold;
+  }
+
   Debt copyWith({
     int? id,
     String? tenantId,
