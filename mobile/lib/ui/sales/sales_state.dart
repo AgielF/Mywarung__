@@ -6,13 +6,41 @@ class SalesState {
   final List<TransactionItem> cart;
   final bool isLoading;
   final String? errorMessage;
+  final String? selectedCategory;
 
   const SalesState({
     this.products = const [],
     this.cart = const [],
     this.isLoading = false,
     this.errorMessage,
+    this.selectedCategory,
   });
+
+  List<String> get categories {
+    final set = <String>{};
+    for (final p in products) {
+      set.add(p.category ?? 'Lainnya');
+    }
+    final list = set.toList()..sort();
+    return list;
+  }
+
+  List<Product> get filteredProducts {
+    if (selectedCategory == null) return products;
+    return products
+        .where((p) => (p.category ?? 'Lainnya') == selectedCategory)
+        .toList();
+  }
+
+  SalesState selectCategory(String? category) {
+    return SalesState(
+      products: products,
+      cart: cart,
+      isLoading: isLoading,
+      errorMessage: errorMessage,
+      selectedCategory: category,
+    );
+  }
 
   double get totalAmount {
     return cart.fold(0.0, (sum, item) => sum + item.subtotal);
@@ -23,7 +51,9 @@ class SalesState {
   }
 
   SalesState addToCart(Product product) {
-    final existingIndex = cart.indexWhere((item) => item.productId == product.id);
+    final existingIndex = cart.indexWhere(
+      (item) => item.productId == product.id,
+    );
     if (existingIndex >= 0) {
       final existingItem = cart[existingIndex];
       if (existingItem.quantity >= product.stock) {
@@ -33,7 +63,8 @@ class SalesState {
         quantity: existingItem.quantity + 1,
         subtotal: (existingItem.quantity + 1) * existingItem.price,
       );
-      final newCart = List<TransactionItem>.from(cart)..[existingIndex] = updatedItem;
+      final newCart = List<TransactionItem>.from(cart)
+        ..[existingIndex] = updatedItem;
       return copyWith(cart: newCart, clearError: true);
     } else {
       if (product.stock < 1) {
@@ -59,20 +90,23 @@ class SalesState {
     if (quantity <= 0) {
       return removeFromCart(productId);
     }
-    
+
     final product = products.firstWhere((p) => p.id == productId);
     if (quantity > product.stock) {
       return copyWith(errorMessage: 'Stok tidak cukup untuk ${product.name}');
     }
 
-    final existingIndex = cart.indexWhere((item) => item.productId == productId);
+    final existingIndex = cart.indexWhere(
+      (item) => item.productId == productId,
+    );
     if (existingIndex >= 0) {
       final existingItem = cart[existingIndex];
       final updatedItem = existingItem.copyWith(
         quantity: quantity,
         subtotal: quantity * existingItem.price,
       );
-      final newCart = List<TransactionItem>.from(cart)..[existingIndex] = updatedItem;
+      final newCart = List<TransactionItem>.from(cart)
+        ..[existingIndex] = updatedItem;
       return copyWith(cart: newCart, clearError: true);
     }
     return this;
@@ -88,12 +122,17 @@ class SalesState {
     bool? isLoading,
     String? errorMessage,
     bool clearError = false,
+    String? selectedCategory,
+    bool clearCategory = false,
   }) {
     return SalesState(
       products: products ?? this.products,
       cart: cart ?? this.cart,
       isLoading: isLoading ?? this.isLoading,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      selectedCategory: clearCategory
+          ? null
+          : (selectedCategory ?? this.selectedCategory),
     );
   }
 }

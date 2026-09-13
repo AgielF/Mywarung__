@@ -433,6 +433,39 @@ class _SalesScreenState extends State<SalesScreen> {
     );
   }
 
+  Widget _buildCategoryChips() {
+    return SizedBox(
+      height: 48,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ChoiceChip(
+              label: const Text('Semua'),
+              selected: _state.selectedCategory == null,
+              onSelected: (_) => setState(() {
+                _state = _state.selectCategory(null);
+              }),
+            ),
+          ),
+          for (final cat in _state.categories)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: ChoiceChip(
+                label: Text(cat),
+                selected: _state.selectedCategory == cat,
+                onSelected: (_) => setState(() {
+                  _state = _state.selectCategory(cat);
+                }),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProductList() {
     if (_state.isLoading && _state.products.isEmpty) {
       return const Center(child: CircularProgressIndicator());
@@ -442,101 +475,125 @@ class _SalesScreenState extends State<SalesScreen> {
       return const Center(child: Text('Belum ada produk untuk dijual.'));
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.85,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: _state.products.length,
-      itemBuilder: (context, index) {
-        final product = _state.products[index];
-        final qtyInCart = _state.cart
-            .where((item) => item.productId == product.id)
-            .fold<int>(0, (sum, item) => sum + item.quantity);
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        child: Text(
-                          product.name.isNotEmpty
-                              ? product.name[0].toUpperCase()
-                              : '?',
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        product.name,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Rp ${product.price.toStringAsFixed(0)}'),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Stok: ${product.stock}',
-                        style: TextStyle(
-                          color: product.stock > 0 ? Colors.green : Colors.red,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+    return Column(
+      children: [
+        _buildCategoryChips(),
+        Expanded(
+          child: _state.filteredProducts.isEmpty
+              ? const Center(child: Text('Tidak ada produk di kategori ini'))
+              : GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.85,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
                   ),
+                  itemCount: _state.filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _state.filteredProducts[index];
+
+                    final qtyInCart = _state.cart
+                        .where((item) => item.productId == product.id)
+                        .fold<int>(0, (sum, item) => sum + item.quantity);
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 28,
+                                    child: Text(
+                                      product.name.isNotEmpty
+                                          ? product.name[0].toUpperCase()
+                                          : '?',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    product.name,
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Rp ${product.price.toStringAsFixed(0)}',
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Stok: ${product.stock}',
+                                    style: TextStyle(
+                                      color: product.stock > 0
+                                          ? Colors.green
+                                          : Colors.red,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (qtyInCart == 0)
+                              SizedBox(
+                                width: double.infinity,
+                                height: 36,
+                                child: ElevatedButton(
+                                  onPressed: () => _addToCart(product),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  child: const Text('Tambah'),
+                                ),
+                              )
+                            else
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.remove),
+                                    onPressed: () => _updateQuantity(
+                                      product.id!,
+                                      qtyInCart - 1,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$qtyInCart',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.add),
+                                    onPressed: qtyInCart >= product.stock
+                                        ? null
+                                        : () => _updateQuantity(
+                                            product.id!,
+                                            qtyInCart + 1,
+                                          ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                if (qtyInCart == 0)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 36,
-                    child: ElevatedButton(
-                      onPressed: () => _addToCart(product),
-                      style: ElevatedButton.styleFrom(padding: EdgeInsets.zero),
-                      child: const Text('Tambah'),
-                    ),
-                  )
-                else
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.remove),
-                        onPressed: () =>
-                            _updateQuantity(product.id!, qtyInCart - 1),
-                      ),
-                      Text(
-                        '$qtyInCart',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: const Icon(Icons.add),
-                        onPressed: qtyInCart >= product.stock
-                            ? null
-                            : () => _updateQuantity(product.id!, qtyInCart + 1),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+        ),
+      ],
     );
   }
 
