@@ -11,32 +11,78 @@ import 'package:pos_warung_ai/ui/customer/debt_list_screen.dart';
 class MockCustomerRepository implements CustomerRepository {
   bool deleteCalled = false;
 
-  @override Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* {}
-  @override Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
-  @override Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
-  @override Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
-  @override Future<void> update(Customer customer, {String tenantId = 'tenant-1'}) async {}
-  @override Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {
+  @override
+  Stream<List<Customer>> watchAll({String tenantId = 'tenant-1'}) async* {}
+  @override
+  Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async =>
+      null;
+  @override
+  Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
+  @override
+  Future<int> create({
+    required String name,
+    String? phone,
+    String tenantId = 'tenant-1',
+  }) async => 1;
+  @override
+  Future<void> update(
+    Customer customer, {
+    String tenantId = 'tenant-1',
+  }) async {}
+  @override
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {
     deleteCalled = true;
   }
 }
 
 class MockDebtRepository implements DebtRepository {
-  @override Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
-  @override Stream<List<Debt>> watchByCustomer(int customerId, {String tenantId = 'tenant-1'}) async* {
+  @override
+  Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
+  @override
+  Stream<List<Debt>> watchByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async* {
     yield [];
   }
-  @override Future<List<Debt>> getUnpaidByCustomer(int customerId, {String tenantId = 'tenant-1'}) async => [];
-  @override Future<int> createDebt({required int customerId, required double amount, String tenantId = 'tenant-1'}) async => 1;
-  @override Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {}
-  @override Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
+
+  @override
+  Future<List<Debt>> getUnpaidByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async => [];
+  @override
+  Future<int> createDebt({
+    required int customerId,
+    required double amount,
+    DateTime? dueDate,
+    String tenantId = 'tenant-1',
+  }) async => 1;
+  @override
+  Future<void> payDebt({
+    required int debtId,
+    required double payment,
+    String tenantId = 'tenant-1',
+  }) async {}
+  @override
+  Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
 }
 
 class MockTransactionRepository implements TransactionRepository {
-  @override Stream<List<domain.Transaction>> watchAll({DateTime? from, DateTime? to}) async* {}
-  @override Future<List<domain.Transaction>> getAll({DateTime? from, DateTime? to}) async => [];
-  @override Future<domain.Transaction?> getById(int id) async => null;
-  @override Future<int> create(domain.Transaction transaction) async => 1;
+  @override
+  Stream<List<domain.Transaction>> watchAll({
+    DateTime? from,
+    DateTime? to,
+  }) async* {}
+  @override
+  Future<List<domain.Transaction>> getAll({
+    DateTime? from,
+    DateTime? to,
+  }) async => [];
+  @override
+  Future<domain.Transaction?> getById(int id) async => null;
+  @override
+  Future<int> create(domain.Transaction transaction) async => 1;
 }
 
 void main() {
@@ -44,7 +90,12 @@ void main() {
   late MockDebtRepository debtRepo;
   late MockTransactionRepository txRepo;
 
-  final testCustomer = Customer(id: 1, tenantId: 'tenant-1', name: 'Budi Kasbon', createdAt: DateTime.now());
+  final testCustomer = Customer(
+    id: 1,
+    tenantId: 'tenant-1',
+    name: 'Budi Kasbon',
+    createdAt: DateTime.now(),
+  );
 
   setUp(() {
     customerRepo = MockCustomerRepository();
@@ -65,7 +116,9 @@ void main() {
     );
   }
 
-  testWidgets('DebtListScreen shows popup menu with Edit and Hapus', (tester) async {
+  testWidgets('DebtListScreen shows popup menu with Edit and Hapus', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget());
     await tester.pumpAndSettle();
 
@@ -79,7 +132,9 @@ void main() {
     expect(find.text('Hapus Customer'), findsOneWidget);
   });
 
-  testWidgets('DebtListScreen hapus customer tanpa kasbon berhasil', (tester) async {
+  testWidgets('DebtListScreen hapus customer tanpa kasbon berhasil', (
+    tester,
+  ) async {
     await tester.pumpWidget(createWidget());
     await tester.pumpAndSettle();
 
@@ -91,7 +146,7 @@ void main() {
 
     // Dialog confirm
     expect(find.text('Hapus Customer'), findsWidgets); // Title and button
-    
+
     await tester.tap(find.text('Hapus'));
     await tester.pumpAndSettle();
 

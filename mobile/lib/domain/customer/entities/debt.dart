@@ -21,6 +21,7 @@ class Debt {
   final DebtStatus status;
   final DateTime createdAt;
   final DateTime? updatedAt;
+  final DateTime? dueDate;
 
   const Debt({
     this.id,
@@ -31,10 +32,13 @@ class Debt {
     required this.status,
     required this.createdAt,
     this.updatedAt,
+    this.dueDate,
   });
 
   double get remainingAmount => amount - paid;
   bool get isPaid => status == DebtStatus.paid;
+  bool get isOverdue =>
+      dueDate != null && !isPaid && dueDate!.isBefore(DateTime.now());
 
   Debt copyWith({
     int? id,
@@ -45,6 +49,7 @@ class Debt {
     DebtStatus? status,
     DateTime? createdAt,
     DateTime? Function()? updatedAt,
+    DateTime? Function()? dueDate,
   }) {
     return Debt(
       id: id ?? this.id,
@@ -55,6 +60,7 @@ class Debt {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt != null ? updatedAt() : this.updatedAt,
+      dueDate: dueDate != null ? dueDate() : this.dueDate,
     );
   }
 
@@ -69,7 +75,8 @@ class Debt {
         other.paid == paid &&
         other.status == status &&
         other.createdAt == createdAt &&
-        other.updatedAt == updatedAt;
+        other.updatedAt == updatedAt &&
+        other.dueDate == dueDate;
   }
 
   @override
@@ -81,11 +88,12 @@ class Debt {
         paid.hashCode ^
         status.hashCode ^
         createdAt.hashCode ^
-        updatedAt.hashCode;
+        updatedAt.hashCode ^
+        dueDate.hashCode;
   }
 
   @override
   String toString() {
-    return 'Debt(id: $id, tenantId: $tenantId, customerId: $customerId, amount: $amount, paid: $paid, status: $status, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Debt(id: $id, tenantId: $tenantId, customerId: $customerId, amount: $amount, paid: $paid, status: $status, createdAt: $createdAt, updatedAt: $updatedAt, dueDate: $dueDate)';
   }
 }

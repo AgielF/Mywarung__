@@ -33,13 +33,27 @@ void main() {
       expect(debts.first.status, DebtStatus.unpaid);
     });
 
+    test('createDebt with dueDate persists dueDate', () async {
+      final dueDate = DateTime(2026, 12, 31);
+      await debtRepo.createDebt(
+        customerId: customerId,
+        amount: 50000,
+        dueDate: dueDate,
+      );
+      final debts = await debtRepo.getUnpaidByCustomer(customerId);
+      expect(debts.length, 1);
+      expect(debts.first.dueDate, dueDate);
+    });
+
     test('payDebt partly updates paid but status remains unpaid', () async {
       await debtRepo.createDebt(customerId: customerId, amount: 50000);
       final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
 
       await debtRepo.payDebt(debtId: debt.id!, payment: 20000);
-      
-      final updatedDebt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
+
+      final updatedDebt = (await debtRepo.getUnpaidByCustomer(
+        customerId,
+      )).first;
       expect(updatedDebt.paid, 20000);
       expect(updatedDebt.status, DebtStatus.unpaid);
     });
@@ -49,7 +63,7 @@ void main() {
       final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
 
       await debtRepo.payDebt(debtId: debt.id!, payment: 50000);
-      
+
       final unpaid = await debtRepo.getUnpaidByCustomer(customerId);
       expect(unpaid.isEmpty, true);
     });
@@ -82,22 +96,37 @@ void main() {
     });
 
     test('payDebt dengan tenantId berbeda -> throws StateError', () async {
-      await debtRepo.createDebt(customerId: customerId, amount: 50000, tenantId: 'tenant-1');
+      await debtRepo.createDebt(
+        customerId: customerId,
+        amount: 50000,
+        tenantId: 'tenant-1',
+      );
       final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
 
       expect(
-        () => debtRepo.payDebt(debtId: debt.id!, payment: 10000, tenantId: 'tenant-2'),
+        () => debtRepo.payDebt(
+          debtId: debt.id!,
+          payment: 10000,
+          tenantId: 'tenant-2',
+        ),
         throwsA(isA<StateError>()),
       );
     });
 
     test('delete debt dari tenant berbeda -> tidak menghapus', () async {
-      await debtRepo.createDebt(customerId: customerId, amount: 50000, tenantId: 'tenant-1');
+      await debtRepo.createDebt(
+        customerId: customerId,
+        amount: 50000,
+        tenantId: 'tenant-1',
+      );
       final debt = (await debtRepo.getUnpaidByCustomer(customerId)).first;
 
       await debtRepo.delete(debt.id!, tenantId: 'tenant-2');
-      
-      final unpaid = await debtRepo.getUnpaidByCustomer(customerId, tenantId: 'tenant-1');
+
+      final unpaid = await debtRepo.getUnpaidByCustomer(
+        customerId,
+        tenantId: 'tenant-1',
+      );
       expect(unpaid.isNotEmpty, true);
     });
   });

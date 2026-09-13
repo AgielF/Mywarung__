@@ -18,31 +18,55 @@ class FakeReportingRepository implements ReportingRepository {
   bool get _shouldThrowTrend => throwError || throwTrendError;
 
   @override
-  Future<DailyReport> getDailyReport(DateTime date, {String tenantId = 'tenant-1'}) async {
+  Future<DailyReport> getDailyReport(
+    DateTime date, {
+    String tenantId = 'tenant-1',
+  }) async {
     if (_shouldThrowReport) throw Exception('Test error');
-    return fakeDailyReport ?? DailyReport(date: date, totalSales: 0, transactionCount: 0, breakdown: const [], transactions: const []);
+    return fakeDailyReport ??
+        DailyReport(
+          date: date,
+          totalSales: 0,
+          transactionCount: 0,
+          breakdown: const [],
+          transactions: const [],
+        );
   }
 
   @override
-  Stream<DailyReport> watchDailyReport(DateTime date, {String tenantId = 'tenant-1'}) async* {
+  Stream<DailyReport> watchDailyReport(
+    DateTime date, {
+    String tenantId = 'tenant-1',
+  }) async* {
     if (_shouldThrowReport) throw Exception('Test error');
     yield await getDailyReport(date, tenantId: tenantId);
   }
 
   @override
-  Future<List<DailyReport>> getRangeReport(DateTime from, DateTime to, {String tenantId = 'tenant-1'}) async {
+  Future<List<DailyReport>> getRangeReport(
+    DateTime from,
+    DateTime to, {
+    String tenantId = 'tenant-1',
+  }) async {
     if (_shouldThrowReport) throw Exception('Test error');
     return fakeRangeReport ?? [];
   }
 
   @override
-  Stream<List<DailyReport>> watchRangeReport(DateTime from, DateTime to, {String tenantId = 'tenant-1'}) async* {
+  Stream<List<DailyReport>> watchRangeReport(
+    DateTime from,
+    DateTime to, {
+    String tenantId = 'tenant-1',
+  }) async* {
     if (_shouldThrowReport) throw Exception('Test error');
     yield await getRangeReport(from, to, tenantId: tenantId);
   }
 
   @override
-  Future<List<SalesTrendPoint>> getSalesTrend({int days = 7, String tenantId = 'tenant-1'}) async {
+  Future<List<SalesTrendPoint>> getSalesTrend({
+    int days = 7,
+    String tenantId = 'tenant-1',
+  }) async {
     if (_shouldThrowTrend) throw Exception('Test error');
     return fakeTrend ?? [];
   }
@@ -53,7 +77,9 @@ class FakeDebtOutstandingRepository implements DebtOutstandingRepository {
   bool throwError = false;
 
   @override
-  Future<DebtOutstandingReport> getOutstandingReport({String tenantId = 'tenant-1'}) async {
+  Future<DebtOutstandingReport> getOutstandingReport({
+    String tenantId = 'tenant-1',
+  }) async {
     if (throwError) throw Exception('Test error');
     if (report != null) return report!;
     return const DebtOutstandingReport(
@@ -67,12 +93,21 @@ class FakeDebtOutstandingRepository implements DebtOutstandingRepository {
 
 class FakeDebtRepository implements DebtRepository {
   @override
-  Future<int> createDebt({required int customerId, required double amount, String tenantId = 'tenant-1'}) async {
+  Future<int> createDebt({
+    required int customerId,
+    required double amount,
+    DateTime? dueDate,
+    String tenantId = 'tenant-1',
+  }) async {
     throw UnimplementedError();
   }
 
   @override
-  Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {
+  Future<void> payDebt({
+    required int debtId,
+    required double payment,
+    String tenantId = 'tenant-1',
+  }) async {
     throw UnimplementedError();
   }
 
@@ -82,7 +117,10 @@ class FakeDebtRepository implements DebtRepository {
   }
 
   @override
-  Future<List<Debt>> getUnpaidByCustomer(int customerId, {String tenantId = 'tenant-1'}) async {
+  Future<List<Debt>> getUnpaidByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async {
     return [];
   }
 
@@ -90,5 +128,8 @@ class FakeDebtRepository implements DebtRepository {
   Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
 
   @override
-  Stream<List<Debt>> watchByCustomer(int customerId, {String tenantId = 'tenant-1'}) async* {}
+  Stream<List<Debt>> watchByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async* {}
 }

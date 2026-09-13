@@ -19,13 +19,21 @@ class MockCustomerRepository implements CustomerRepository {
   Future<List<Customer>> getAll({String tenantId = 'tenant-1'}) async => [];
 
   @override
-  Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async => null;
+  Future<Customer?> getById(int id, {String tenantId = 'tenant-1'}) async =>
+      null;
 
   @override
-  Future<int> create({required String name, String? phone, String tenantId = 'tenant-1'}) async => 1;
+  Future<int> create({
+    required String name,
+    String? phone,
+    String tenantId = 'tenant-1',
+  }) async => 1;
 
   @override
-  Future<void> update(Customer customer, {String tenantId = 'tenant-1'}) async {}
+  Future<void> update(
+    Customer customer, {
+    String tenantId = 'tenant-1',
+  }) async {}
 
   @override
   Future<void> delete(int id, {String tenantId = 'tenant-1'}) async {}
@@ -50,7 +58,9 @@ class FakeDebtOutstandingRepository implements DebtOutstandingRepository {
   bool throwError = false;
 
   @override
-  Future<DebtOutstandingReport> getOutstandingReport({String tenantId = 'tenant-1'}) async {
+  Future<DebtOutstandingReport> getOutstandingReport({
+    String tenantId = 'tenant-1',
+  }) async {
     if (throwError) throw Exception('Test error');
     if (report != null) return report!;
     return const DebtOutstandingReport(
@@ -64,14 +74,21 @@ class FakeDebtOutstandingRepository implements DebtOutstandingRepository {
 
 class FakeDebtRepository implements DebtRepository {
   @override
-  Future<int> createDebt({required int customerId, required double amount, String tenantId = 'tenant-1'}) async {
+  Future<int> createDebt({
+    required int customerId,
+    required double amount,
+    DateTime? dueDate,
+    String tenantId = 'tenant-1',
+  }) async {
     throw UnimplementedError();
   }
 
-
-
   @override
-  Future<void> payDebt({required int debtId, required double payment, String tenantId = 'tenant-1'}) async {
+  Future<void> payDebt({
+    required int debtId,
+    required double payment,
+    String tenantId = 'tenant-1',
+  }) async {
     throw UnimplementedError();
   }
 
@@ -81,7 +98,10 @@ class FakeDebtRepository implements DebtRepository {
   }
 
   @override
-  Future<List<Debt>> getUnpaidByCustomer(int customerId, {String tenantId = 'tenant-1'}) async {
+  Future<List<Debt>> getUnpaidByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async {
     return [];
   }
 
@@ -89,7 +109,10 @@ class FakeDebtRepository implements DebtRepository {
   Stream<List<Debt>> watchAll({String tenantId = 'tenant-1'}) async* {}
 
   @override
-  Stream<List<Debt>> watchByCustomer(int customerId, {String tenantId = 'tenant-1'}) async* {}
+  Stream<List<Debt>> watchByCustomer(
+    int customerId, {
+    String tenantId = 'tenant-1',
+  }) async* {}
 }
 
 void main() {
@@ -124,21 +147,35 @@ void main() {
     expect(find.text('Total Piutang'), findsNothing); // summary tidak tampil
   });
 
-  testWidgets('list customer dan summary card tampil saat ada data', (tester) async {
+  testWidgets('list customer dan summary card tampil saat ada data', (
+    tester,
+  ) async {
     repo.report = DebtOutstandingReport(
       totalOutstanding: 150000,
       customerCount: 2,
       debtCount: 3,
       summaries: [
         CustomerDebtSummary(
-          customer: Customer(id: 1, tenantId: 'tenant-1', name: 'Budi', phone: '0812', createdAt: DateTime(2023)),
+          customer: Customer(
+            id: 1,
+            tenantId: 'tenant-1',
+            name: 'Budi',
+            phone: '0812',
+            createdAt: DateTime(2023),
+          ),
           totalDebt: 100000,
           totalPaid: 0,
           remaining: 100000,
           unpaidCount: 1,
         ),
         CustomerDebtSummary(
-          customer: Customer(id: 2, tenantId: 'tenant-1', name: 'Andi', phone: '', createdAt: DateTime(2023)),
+          customer: Customer(
+            id: 2,
+            tenantId: 'tenant-1',
+            name: 'Andi',
+            phone: '',
+            createdAt: DateTime(2023),
+          ),
           totalDebt: 50000,
           totalPaid: 0,
           remaining: 50000,
@@ -155,7 +192,7 @@ void main() {
     expect(find.text('Rp 150.000'), findsOneWidget);
     expect(find.text('2'), findsWidgets); // Jumlah customer
     expect(find.text('3'), findsWidgets); // Jumlah kasbon
-    
+
     // Cek List
     expect(find.text('Daftar Customer'), findsOneWidget);
     expect(find.text('Budi'), findsOneWidget);
@@ -171,7 +208,7 @@ void main() {
 
   testWidgets('error state tampil saat repository throw', (tester) async {
     repo.throwError = true;
-    
+
     await tester.pumpWidget(createWidget());
     await tester.pumpAndSettle();
 

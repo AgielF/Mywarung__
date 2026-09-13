@@ -7,7 +7,7 @@ void main() {
     // Step 1: buat executor in-memory dengan schema v1 manual
     final executor = NativeDatabase.memory(
       setup: (db) async {
-        await db.execute('''
+        db.execute('''
           CREATE TABLE debts (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             tenant_id TEXT NOT NULL,
@@ -19,7 +19,7 @@ void main() {
             updated_at INTEGER
           )
         ''');
-        await db.execute('''
+        db.execute('''
           CREATE TABLE customers (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             tenant_id TEXT NOT NULL,
@@ -29,7 +29,7 @@ void main() {
             updated_at INTEGER
           )
         ''');
-        await db.execute('''
+        db.execute('''
           CREATE TABLE products (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             tenant_id TEXT NOT NULL,
@@ -43,7 +43,7 @@ void main() {
             is_deleted INTEGER NOT NULL DEFAULT 0
           )
         ''');
-        await db.execute('''
+        db.execute('''
           CREATE TABLE transactions (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             tenant_id TEXT NOT NULL,
@@ -53,7 +53,7 @@ void main() {
             created_at INTEGER NOT NULL
           )
         ''');
-        await db.execute('''
+        db.execute('''
           CREATE TABLE transaction_items (
             id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
             transaction_id INTEGER NOT NULL,
@@ -63,8 +63,8 @@ void main() {
             subtotal REAL NOT NULL
           )
         ''');
-        await db.execute('PRAGMA user_version = 1');
-        await db.execute(
+        db.execute('PRAGMA user_version = 1');
+        db.execute(
           'INSERT INTO debts (tenant_id, customer_id, amount, paid, status, created_at) '
           'VALUES (?, ?, ?, ?, ?, ?)',
           [

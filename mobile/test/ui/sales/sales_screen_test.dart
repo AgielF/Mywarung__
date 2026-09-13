@@ -128,6 +128,7 @@ class FakeDebtRepository implements DebtRepository {
   Future<int> createDebt({
     required int customerId,
     required double amount,
+    DateTime? dueDate,
     String tenantId = 'tenant-1',
   }) async {
     createDebtCalled = true;
