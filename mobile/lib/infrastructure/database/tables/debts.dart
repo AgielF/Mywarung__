@@ -8,6 +8,10 @@ class Debts extends Table {
   RealColumn get amount => real()();
   RealColumn get paid => real().withDefault(const Constant(0))();
   TextColumn get status => text()();
-  Column<int> get createdAt => integer().named('created_at').map(const DateTimeConverter())();
-  Column<int> get updatedAt => integer().named('updated_at').nullable().map(const DateTimeConverter())();
+  Column<int> get createdAt =>
+      integer().named('created_at').map(const DateTimeConverter())();
+  Column<int> get updatedAt =>
+      integer().named('updated_at').nullable().map(const DateTimeConverter())();
+  Column<int> get dueDate =>
+      integer().named('due_date').nullable().map(const DateTimeConverter())();
 }
