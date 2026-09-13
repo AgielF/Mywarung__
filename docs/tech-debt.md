@@ -187,3 +187,15 @@ Saat ini aman karena tenant hardcoded, tapi harus diperbaiki saat multi-tenant a
 **Asal:** Task 9b-2 (UX #3)
 **Kondisi:** `t.paymentMethod.name == 'debt'` — tidak type-safe.
 **Fix:** Ganti ke `t.paymentMethod == PaymentMethod.debt`.
+
+## TUNDA KE FASE 2
+
+### TD-23 — Inventory filter di UI layer
+**Asal:** Fase 1 (commit 008a6c7) - Performance / Scalability
+**Kondisi:** Menambahkan filter "Stok Menipis" di InventoryListScreen via `.where()` pada list in-memory. Untuk saat ini OK (produk warung <100), tapi kalau nanti produk >500, filter harus pindah ke repository query (Drift) supaya tidak load semua produk ke memory.
+**Fix Fase 2/3:** Refactor `ProductRepository.watchAll()` → tambah param filter `lowStockOnly` atau buat query terpisah.
+
+### TD-24 — Test assertion rapuh di inventory_list_screen_test
+**Asal:** Fase 1 - Test Quality
+**Kondisi:** Test "Badge tidak muncul untuk produk stock=20" pakai `expect(textWidget.style?.color, null)`. Ini rapuh — kalau Flutter mengubah default color ListTile.subtitle, test akan gagal padahal behavior benar.
+**Fix Fase 2:** Ganti jadi `expect(textWidget.style?.color, isNot(Colors.red))` supaya lebih ekspresif dan tahan perubahan default theme.
